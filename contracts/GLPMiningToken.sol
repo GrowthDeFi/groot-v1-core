@@ -39,18 +39,26 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 	{
 		address _treasury = msg.sender;
 		_setupDecimals(_decimals);
-		assert(_reserveToken != address(0));
-		assert(_rewardsToken != address(0));
 		assert(_reserveToken != _rewardsToken);
 		reserveToken = _reserveToken;
 		rewardsToken = _rewardsToken;
 		treasury = _treasury;
-		// just after creation it must transfer 1 wei from reserveToken
-		// into this contract
-		// this must be performed manually because we cannot approve
-		// the spending by this contract before it exists
-		// Transfers._pullFunds(_reserveToken, _from, 1);
+	}
+
+	// IMPORTANT just after creation we must call this method
+	function bootstrap() external onlyOwner nonReentrant
+	{
+		address _from = msg.sender;
+		uint256 _totalSupply = totalSupply();
+		uint256 _totalReserve = totalReserve();
+		require(_totalSupply == 0 && _totalReserve == 0, "illegal state");
+		Transfers._pullFunds(reserveToken, _from, 1);
 		_mint(address(this), 1);
+	}
+
+	function totalReserve() public view override returns (uint256 _totalReserve)
+	{
+		return Transfers._getBalance(reserveToken);
 	}
 
 	function calcSharesFromCost(uint256 _cost) public view override returns (uint256 _shares)
@@ -73,11 +81,6 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 	{
 		uint256 _cost = calcCostFromShares(_shares);
 		return UniswapV2LiquidityPoolAbstraction._estimateExitPool(reserveToken, _token, _cost);
-	}
-
-	function totalReserve() public view override returns (uint256 _totalReserve)
-	{
-		return Transfers._getBalance(reserveToken);
 	}
 
 	function rewardInfo() external view override returns (uint256 _lockedReward, uint256 _unlockedReward)
@@ -169,7 +172,6 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 	function setRewardPerBlock(uint256 _newRewardPerBlock) external override onlyOwner nonReentrant
 	{
 		(lastContractBlock, lastLockedReward, lastUnlockedReward) = _calcCurrentRewards();
-		// require(_newRewardPerBlock <= 1e18, "invalid rate");
 		uint256 _oldRewardPerBlock = rewardPerBlock;
 		rewardPerBlock = _newRewardPerBlock;
 		emit ChangeRewardPerBlock(_oldRewardPerBlock, _newRewardPerBlock);
