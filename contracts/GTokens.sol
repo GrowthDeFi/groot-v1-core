@@ -8,7 +8,7 @@ import { $ } from "./network/$.sol";
 
 contract PMINE is GPlainToken
 {
-	constructor (uint256 _initialSupply)
+	constructor ()
 		GPlainToken("PMINE", "PMINE", 18, 20000e18) public
 	{
 	}

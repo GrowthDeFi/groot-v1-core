@@ -33,6 +33,13 @@ contract GTokenSwapper is ReentrancyGuard
 		enabled = true;
 	}
 
+	function estimateSwap() external view returns (uint256 _newAmount)
+	{
+		address _from = msg.sender;
+		uint256 _oldAmount = IERC20(oldToken).balanceOf(_from);
+		return _oldAmount.mul(newLimit).div(oldLimit);
+	}
+
 	function swap() external nonReentrant
 	{
 		address _from = msg.sender;
