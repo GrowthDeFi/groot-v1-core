@@ -17,10 +17,7 @@ import { UniswapV2LiquidityPoolAbstraction } from "./modules/UniswapV2LiquidityP
 contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 {
 	uint256 constant MAXIMUM_PERFORMANCE_FEE = 50e16; // 50%
-
-	uint256 constant BLOCKS_PER_WEEK = 7 days / uint256(13 seconds);
 	uint256 constant DEFAULT_PERFORMANCE_FEE = 10e16; // 10%
-	uint256 constant DEFAULT_REWARD_RATE_PER_WEEK = 10e16; // 10%
 
 	address public immutable override reserveToken;
 	address public immutable override rewardsToken;
@@ -28,10 +25,9 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 	address public override treasury;
 
 	uint256 public override performanceFee = DEFAULT_PERFORMANCE_FEE;
-	uint256 public override rewardRatePerWeek = DEFAULT_REWARD_RATE_PER_WEEK;
+	uint256 public override rewardPerBlock = 0;
 
 	uint256 lastContractBlock = block.number;
-	uint256 lastRewardPerBlock = 0;
 	uint256 lastUnlockedReward = 0;
 	uint256 lastLockedReward = 0;
 
@@ -84,10 +80,10 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 		return Transfers._getBalance(reserveToken);
 	}
 
-	function rewardInfo() external view override returns (uint256 _lockedReward, uint256 _unlockedReward, uint256 _rewardPerBlock)
+	function rewardInfo() external view override returns (uint256 _lockedReward, uint256 _unlockedReward)
 	{
-		(, _rewardPerBlock, _unlockedReward, _lockedReward) = _calcCurrentRewards();
-		return (_lockedReward, _unlockedReward, _rewardPerBlock);
+		(, _lockedReward, _unlockedReward) = _calcCurrentRewards();
+		return (_lockedReward, _unlockedReward);
 	}
 
 	function pendingFees() external view override returns (uint256 _feeShares)
@@ -132,9 +128,16 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 
 	function gulpRewards(uint256 _minCost) external override nonReentrant
 	{
-		_updateRewards();
+		(lastContractBlock, lastLockedReward, lastUnlockedReward) = _calcCurrentRewards();
+		uint256 _balanceReward = Transfers._getBalance(rewardsToken);
+		uint256 _totalReward = lastLockedReward.add(lastUnlockedReward);
+		if (_balanceReward > _totalReward) {
+			uint256 _newLockedReward = _balanceReward.sub(_totalReward);
+			lastLockedReward = lastLockedReward.add(_newLockedReward);
+		}
 		UniswapV2LiquidityPoolAbstraction._joinPool(reserveToken, rewardsToken, lastUnlockedReward, _minCost);
 		lastUnlockedReward = 0;
+		assert(lastLockedReward.add(lastUnlockedReward) == Transfers._getBalance(rewardsToken));
 	}
 
 	function gulpFees() external override nonReentrant
@@ -163,39 +166,13 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 		emit ChangePerformanceFee(_oldPerformanceFee, _newPerformanceFee);
 	}
 
-	function setRewardRatePerWeek(uint256 _newRewardRatePerWeek) external override onlyOwner nonReentrant
+	function setRewardPerBlock(uint256 _newRewardPerBlock) external override onlyOwner nonReentrant
 	{
-		require(_newRewardRatePerWeek <= 1e18, "invalid rate");
-		uint256 _oldRewardRatePerWeek = rewardRatePerWeek;
-		rewardRatePerWeek = _newRewardRatePerWeek;
-		emit ChangeRewardRatePerWeek(_oldRewardRatePerWeek, _newRewardRatePerWeek);
-	}
-
-	function _updateRewards() internal
-	{
-		(lastContractBlock, lastRewardPerBlock, lastUnlockedReward, lastLockedReward) = _calcCurrentRewards();
-		uint256 _balanceReward = Transfers._getBalance(rewardsToken);
-		uint256 _totalReward = lastLockedReward.add(lastUnlockedReward);
-		if (_balanceReward > _totalReward) {
-			uint256 _newLockedReward = _balanceReward.sub(_totalReward);
-			uint256 _newRewardPerBlock = _calcRewardPerBlock(_newLockedReward);
-			lastRewardPerBlock = lastRewardPerBlock.add(_newRewardPerBlock);
-			lastLockedReward = lastLockedReward.add(_newLockedReward);
-		}
-		else
-		if (_balanceReward < _totalReward) {
-			uint256 _removedLockedReward = _totalReward.sub(_balanceReward);
-			if (_removedLockedReward >= lastLockedReward) {
-				_removedLockedReward = lastLockedReward;
-			}
-			uint256 _removedRewardPerBlock = _calcRewardPerBlock(_removedLockedReward);
-			if (_removedLockedReward >= lastLockedReward) {
-				_removedRewardPerBlock = lastRewardPerBlock;
-			}
-			lastRewardPerBlock = lastRewardPerBlock.sub(_removedRewardPerBlock);
-			lastLockedReward = lastLockedReward.sub(_removedLockedReward);
-			lastUnlockedReward = _balanceReward.sub(lastLockedReward);
-		}
+		(lastContractBlock, lastLockedReward, lastUnlockedReward) = _calcCurrentRewards();
+		// require(_newRewardPerBlock <= 1e18, "invalid rate");
+		uint256 _oldRewardPerBlock = rewardPerBlock;
+		rewardPerBlock = _newRewardPerBlock;
+		emit ChangeRewardPerBlock(_oldRewardPerBlock, _newRewardPerBlock);
 	}
 
 	function _calcFees() internal view returns (uint256 _feeShares)
@@ -220,40 +197,18 @@ contract GLPMiningToken is ERC20, Ownable, ReentrancyGuard, GLPMining
 		return 0;
 	}
 
-	function _calcCurrentRewards() internal view returns (uint256 _currentContractBlock, uint256 _currentRewardPerBlock, uint256 _currentUnlockedReward, uint256 _currentLockedReward)
+	function _calcCurrentRewards() internal view returns (uint256 _currentContractBlock, uint256 _currentLockedReward, uint256 _currentUnlockedReward)
 	{
 		uint256 _contractBlock = lastContractBlock;
-		uint256 _rewardPerBlock = lastRewardPerBlock;
-		uint256 _unlockedReward = lastUnlockedReward;
 		uint256 _lockedReward = lastLockedReward;
+		uint256 _unlockedReward = lastUnlockedReward;
 		if (_contractBlock < block.number) {
-			uint256 _week = _contractBlock.div(BLOCKS_PER_WEEK);
-			uint256 _offset = _contractBlock.mod(BLOCKS_PER_WEEK);
-
+			uint256 _blocks = block.number.sub(_contractBlock);
+			uint256 _reward = _blocks.mul(rewardPerBlock);
 			_contractBlock = block.number;
-			uint256 _currentWeek = _contractBlock.div(BLOCKS_PER_WEEK);
-			uint256 _currentOffset = _contractBlock.mod(BLOCKS_PER_WEEK);
-
-			while (_week < _currentWeek) {
-				uint256 _blocks = BLOCKS_PER_WEEK.sub(_offset);
-				uint256 _reward = _blocks.mul(_rewardPerBlock);
-				_unlockedReward = _unlockedReward.add(_reward);
-				_lockedReward = _lockedReward.sub(_reward);
-				_rewardPerBlock = _calcRewardPerBlock(_lockedReward);
-				_week++;
-				_offset = 0;
-			}
-
-			uint256 _blocks = _currentOffset.sub(_offset);
-			uint256 _reward = _blocks.mul(_rewardPerBlock);
-			_unlockedReward = _unlockedReward.add(_reward);
 			_lockedReward = _lockedReward.sub(_reward);
+			_unlockedReward = _unlockedReward.add(_reward);
 		}
-		return (_contractBlock, _rewardPerBlock, _unlockedReward, _lockedReward);
-	}
-
-	function _calcRewardPerBlock(uint256 _lockedReward) internal view returns (uint256 _rewardPerBlock)
-	{
-		return _lockedReward.mul(rewardRatePerWeek).div(1e18).div(BLOCKS_PER_WEEK);
+		return (_contractBlock, _lockedReward, _unlockedReward);
 	}
 }
