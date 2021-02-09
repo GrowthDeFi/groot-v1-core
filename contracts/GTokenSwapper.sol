@@ -28,8 +28,8 @@ contract GTokenSwapper is ReentrancyGuard
 
 	function enable() external nonReentrant
 	{
-		uint256 _balance = Transfers._getBalance(newToken);
-		require(_balance == newLimit, "full amount ownership required");
+		uint256 _newBalance = Transfers._getBalance(newToken);
+		require(_newBalance == newLimit, "full amount ownership required");
 		enabled = true;
 	}
 
