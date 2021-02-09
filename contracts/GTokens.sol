@@ -1,39 +1,31 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { GToken } from "./GToken.sol";
+import { GPlainToken } from "./GPlainToken.sol";
 import { GLPMiningToken } from "./GLPMiningToken.sol";
 
 import { $ } from "./network/$.sol";
 
-contract rAAVE is GToken
+contract PMINE is GPlainToken
 {
 	constructor (uint256 _initialSupply)
-		GToken("rebase AAVE", "rAAVE", 18, 20000e18) public
+		GPlainToken("PMINE", "PMINE", 18, 20000e18) public
 	{
 	}
 }
 
-contract stkAAVE_rAAVE is GLPMiningToken
+contract stkGRO_PMINE is GLPMiningToken
 {
-	constructor (address _AAVE_rAAVE, address _rAAVE)
-		GLPMiningToken("staked AAVE/rAAVE", "stkAAVE/rAAVE", 18, _AAVE_rAAVE, _rAAVE) public
+	constructor (address _GRO_PMINE, address _PMINE)
+		GLPMiningToken("staked GRO/PMINE", "stkGRO/PMINE", 18, _GRO_PMINE, _PMINE) public
 	{
 	}
 }
 
-contract stkGRO_rAAVE is GLPMiningToken
+contract stkETH_PMINE is GLPMiningToken
 {
-	constructor (address _GRO_rAAVE, address _rAAVE)
-		GLPMiningToken("staked GRO/rAAVE", "stkGRO/rAAVE", 18, _GRO_rAAVE, _rAAVE) public
-	{
-	}
-}
-
-contract stkETH_rAAVE is GLPMiningToken
-{
-	constructor (address _ETH_rAAVE, address _rAAVE)
-		GLPMiningToken("staked ETH/rAAVE", "stkETH/rAAVE", 18, _ETH_rAAVE, _rAAVE) public
+	constructor (address _ETH_PMINE, address _PMINE)
+		GLPMiningToken("staked ETH/PMINE", "stkETH/PMINE", 18, _ETH_PMINE, _PMINE) public
 	{
 	}
 }
