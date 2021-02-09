@@ -16,6 +16,7 @@ library Wrapping
 	 */
 	function _wrap(uint256 _amount) internal
 	{
+		if (_amount == 0) return;
 		WETH($.WETH).deposit{value: _amount}();
 	}
 
@@ -27,6 +28,7 @@ library Wrapping
 	 */
 	function _unwrap(uint256 _amount) internal
 	{
+		if (_amount == 0) return;
 		WETH($.WETH).withdraw(_amount);
 	}
 }
