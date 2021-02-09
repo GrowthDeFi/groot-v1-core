@@ -1,22 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { Transfers } from "./modules/Transfers.sol";
 
-/**
-20,000 rAAVE supply:
-
-2,000 for swaps
-
-8,000 for incentives
-
-10,000 for treasury expansion
- */
 contract GTokenSwapper is ReentrancyGuard
 {
+	using SafeMath for uint256;
+
 	address public immutable oldToken;
 	address public immutable newToken;
 	uint256 public immutable oldLimit;
