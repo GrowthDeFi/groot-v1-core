@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { BEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
 
-contract GPlainToken is ERC20
+contract GPlainToken is BEP20
 {
 	constructor (string memory _name, string memory _symbol, uint8 _decimals, uint256 _initialSupply)
-		ERC20(_name, _symbol) public
+		BEP20(_name, _symbol) public
 	{
 		address _sender = msg.sender;
-		_setupDecimals(_decimals);
+		require(_decimals == 18, "unsupported decimals");
 		_mint(_sender, _initialSupply);
 	}
 }

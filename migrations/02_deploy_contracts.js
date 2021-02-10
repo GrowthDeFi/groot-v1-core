@@ -1,14 +1,13 @@
-const GUniswapV2Exchange = artifacts.require('GUniswapV2Exchange');
-const GEtherBridge = artifacts.require('GEtherBridge');
+const GBNBBridge = artifacts.require('GBNBBridge');
 const GTokenRegistry = artifacts.require('GTokenRegistry');
 const GTokenSwapper = artifacts.require('GTokenSwapper');
 const PMINE = artifacts.require('PMINE');
-const IERC20 = artifacts.require('IERC20');
+const IBEP20 = artifacts.require('IBEP20');
 const Factory = artifacts.require('Factory');
 const Pair = artifacts.require('Pair');
-const stkGRO_PMINE = artifacts.require('stkGRO_PMINE');
-const stkETH_PMINE = artifacts.require('stkETH_PMINE');
+// const stkBNB_PMINE = artifacts.require('stkBNB_PMINE');
 
+/*
 const UniswapV2_FACTORY = {
 	'development': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
 	'mainnet': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
@@ -16,15 +15,6 @@ const UniswapV2_FACTORY = {
 	'rinkeby': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
 	'kovan': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
 	'goerli': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-};
-
-const GRO = {
-	'development': '0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0',
-	'mainnet': '0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0',
-	'ropsten': '0x5BaF82B5Eddd5d64E03509F0a7dBa4Cbf88CF455',
-	'rinkeby': '0x020e317e70B406E23dF059F3656F6fc419411401',
-	'kovan': '0xFcB74f30d8949650AA524d8bF496218a20ce2db4',
-	'goerli': '0x0000000000000000000000000000000000000000',
 };
 
 const WETH = {
@@ -44,18 +34,16 @@ const rAAVE = {
 	'kovan': '0x8093f3ed0caec39ff182243362d167714cc02f99',
 	'goerli': '0x0000000000000000000000000000000000000000',
 };
+*/
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 module.exports = async (deployer, network, [account]) => {
   // publish dependencies
-  await deployer.deploy(GUniswapV2Exchange);
-  await deployer.deploy(GEtherBridge);
+  await deployer.deploy(GBNBBridge);
   await deployer.deploy(GTokenRegistry);
 
   // setup deployment helpers
-  const faucet = await GUniswapV2Exchange.deployed();
-  const factory = await Factory.at(UniswapV2_FACTORY[network]);
   const registry = await GTokenRegistry.deployed();
 
   // publish PMINE contract
@@ -63,6 +51,7 @@ module.exports = async (deployer, network, [account]) => {
   const pmine = await PMINE.deployed();
   await registry.registerNewToken(pmine.address, ZERO_ADDRESS);
 
+/*
   // publish swapper
   {
     const raave = await IERC20.at(rAAVE[network]);
@@ -117,4 +106,5 @@ module.exports = async (deployer, network, [account]) => {
     await pair.approve(stketh_pmine.address, shares);
     await stketh_pmine.deposit(shares);
   }
+*/
 };

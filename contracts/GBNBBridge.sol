@@ -8,7 +8,7 @@ import { Wrapping } from "./modules/Wrapping.sol";
 
 import { $ } from "./network/$.sol";
 
-contract GEtherBridge
+contract GBNBBridge
 {
 	function deposit(address _stakeToken, uint256 _minShares) external payable
 	{

@@ -9,6 +9,7 @@
   "dependencies": {},
   "devDependencies": {
     "@openzeppelin/contracts": "3.3.0",
+    "@pancakeswap/pancake-swap-lib": "0.0.4",
     "@truffle/hdwallet-provider": "^1.2.1",
     "@uniswap/lib": "4.0.1-alpha",
     "@uniswap/v2-periphery": "1.1.0-beta.0",
@@ -22,12 +23,6 @@
   "scripts": {
     "build": "truffle compile",
     "deploy": "truffle migrate",
-    "deploy:testing": "truffle migrate --network testing",
-    "deploy:mainnet": "truffle migrate --network mainnet",
-    "deploy:ropsten": "truffle migrate --network ropsten",
-    "deploy:rinkeby": "truffle migrate --network rinkeby",
-    "deploy:kovan": "truffle migrate --network kovan",
-    "deploy:goerli": "truffle migrate --network goerli",
     "deploy:bscmain": "truffle migrate --network bscmain",
     "deploy:chapel": "truffle migrate --network chapel",
     "source": "truffle-flattener contracts/GTokens.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n\\n/' > PMINE.sol",

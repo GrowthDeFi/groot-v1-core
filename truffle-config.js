@@ -14,35 +14,6 @@ module.exports = {
     },
   },
   networks: {
-    mainnet: {
-      network_id: 1,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(privateKey, 'wss://mainnet.infura.io/ws/v3/' + infuraProjectId),
-    },
-    ropsten: {
-      network_id: 3,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(privateKey, 'wss://ropsten.infura.io/ws/v3/' + infuraProjectId),
-      skipDryRun: true,
-    },
-    rinkeby: {
-      network_id: 4,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(privateKey, 'wss://rinkeby.infura.io/ws/v3/' + infuraProjectId),
-      skipDryRun: true,
-    },
-    kovan: {
-      network_id: 42,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(privateKey, 'wss://kovan.infura.io/ws/v3/' + infuraProjectId),
-      skipDryRun: true,
-    },
-    goerli: {
-      network_id: 5,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(privateKey, 'wss://goerli.infura.io/ws/v3/' + infuraProjectId),
-      skipDryRun: true,
-    },
     bscmain: {
       network_id: 56,
       networkCheckTimeout: 10000, // fixes truffle/infura bug
@@ -52,7 +23,14 @@ module.exports = {
     chapel: {
       network_id: 97,
       networkCheckTimeout: 10000, // fixes truffle/infura bug
-      provider: () => new HDWalletProvider(mnemonic, 'wss://data-seed-prebsc-1-s1.binance.org:8545/'),
+      provider: () => new HDWalletProvider(privateKey, 'wss://data-seed-prebsc-1-s1.binance.org:8545/'),
+      skipDryRun: true,
+    },
+    development: {
+      network_id: 1,
+      gas: 10000000,
+      host: 'localhost',
+      port: 8545,
       skipDryRun: true,
     },
   },
