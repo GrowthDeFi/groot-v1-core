@@ -43,12 +43,17 @@ module.exports = {
       provider: () => new HDWalletProvider(privateKey, 'wss://goerli.infura.io/ws/v3/' + infuraProjectId),
       skipDryRun: true,
     },
-    development: {
-      network_id: 1,
-      gas: 10000000,
-      host: 'localhost',
-      port: 8545,
+    bscmain: {
+      network_id: 56,
+      networkCheckTimeout: 10000, // fixes truffle/infura bug
+      provider: () => new HDWalletProvider(privateKey, 'wss://bsc-dataseed.binance.org/'),
       skipDryRun: true,
     },
-  }
+    chapel: {
+      network_id: 97,
+      networkCheckTimeout: 10000, // fixes truffle/infura bug
+      provider: () => new HDWalletProvider(mnemonic, 'wss://data-seed-prebsc-1-s1.binance.org:8545/'),
+      skipDryRun: true,
+    },
+  },
 };
