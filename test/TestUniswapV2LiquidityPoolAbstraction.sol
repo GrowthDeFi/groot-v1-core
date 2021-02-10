@@ -15,12 +15,12 @@ contract TestUniswapV2LiquidityPoolAbstraction is Env
 {
 	function test01() external
 	{
-		_testPool($.WETH, $.AAVE, 1e18);
+		_testPool($.WETH, $.GRO, 1e18);
 	}
 
 	function test02() external
 	{
-		_testPool($.AAVE, $.WETH, 1e18);
+		_testPool($.GRO, $.WETH, 1e18);
 	}
 
 	function _testPool(address _source, address _target, uint256 _sourceAmount) private
