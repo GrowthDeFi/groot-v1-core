@@ -13,6 +13,14 @@ contract PMINE is GPlainToken
 	}
 }
 
+contract SAFE is GPlainToken
+{
+	constructor ()
+		GPlainToken("rAAVE Debt Token", "SAFE", 18, 1400000e18) public
+	{
+	}
+}
+
 /*
 contract stkBNB_PMINE is GLPMiningToken
 {
