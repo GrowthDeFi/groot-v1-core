@@ -11,6 +11,17 @@ library $
 
 	Network constant NETWORK = Network.Mainnet;
 
+	function network() internal pure returns (Network _network)
+	{
+		assembly { _chainid := chainid() }
+		if (_chainid == 1) return Network.Mainnet;
+		if (_chainid == 3) return Network.Ropsten;
+		if (_chainid == 4) return Network.Rinkeby;
+		if (_chainid == 42) return Network.Kovan;
+		if (_chainid == 5) return Network.Goerli;
+		require(false, "unsupported network");
+	}
+
 	address constant GRO =
 		NETWORK == Network.Mainnet ? 0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0 :
 		NETWORK == Network.Ropsten ? 0x5BaF82B5Eddd5d64E03509F0a7dBa4Cbf88CF455 :
