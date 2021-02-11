@@ -33,6 +33,8 @@ contract Deployer is Ownable
 
 	address[] public contracts;
 
+	bool public deployed = false;
+
 	function registerReceiversPMINE(address[] memory _receivers, uint256[] memory _amounts) external onlyOwner
 	{
 		require(_receivers.length == _amounts.length, "length mismatch");
@@ -59,21 +61,25 @@ contract Deployer is Ownable
 	{
 		require($.NETWORK == $.network(), "wrong network");
 
+		// deploy contracts
 		address _registry = LibDeployer.publishGTokenRegistry();
 		address _bridge = LibDeployer.publishGNativeBridge();
 
 		address _PMINE = LibDeployer.publishPMINE(PMINE_TOTAL_SUPPLY);
 		address _SAFE = LibDeployer.publishSAFE(SAFE_TOTAL_SUPPLY);
 
+		// transfer treasury and farming pools to the treasury
 		IBEP20(_PMINE).transfer(PMINE_TREASURY, PMINE_TREASURY_ALLOCATION);
 
 		IBEP20(_PMINE).transfer(PMINE_TREASURY, PMINE_FARMING_ALLOCATION);
 
+		// airdrops PMINE
 		for (uint256 _i = 0; _i < paymentsPMINE.length; _i++) {
 			Payment storage _payment = paymentsPMINE[_i];
 			IBEP20(_PMINE).transfer(_payment.receiver, _payment.amount);
 		}
 
+		// ardrops SAFE
 		for (uint256 _i = 0; _i < paymentsSAFE.length; _i++) {
 			Payment storage _payment = paymentsSAFE[_i];
 			IBEP20(_SAFE).transfer(_payment.receiver, _payment.amount);
@@ -82,17 +88,26 @@ contract Deployer is Ownable
 		require(Transfers._getBalance(_PMINE) == 0, "PMINE left over");
 		require(Transfers._getBalance(_SAFE) == 0, "SAFE left over");
 
+		// register tokens
 		GTokenRegistry(_registry).registerNewToken(_PMINE, address(0));
 		GTokenRegistry(_registry).registerNewToken(_SAFE, address(0));
+
+		// transfer ownerships
 		GTokenRegistry(_registry).transferOwnership(PMINE_TREASURY);
 
+		// make contract addresses visible
 		contracts.push(_registry);
 		contracts.push(_bridge);
 		contracts.push(_PMINE);
 		contracts.push(_SAFE);
 
+		// wrap up the deployment
+		deployed = true;
 		renounceOwnership();
+		emit DeployPerformed();
 	}
+
+	event DeployPerformed();
 }
 
 library LibDeployer
