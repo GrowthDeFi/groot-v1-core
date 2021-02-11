@@ -28,7 +28,7 @@ contract Env
 		address _router = $.PancakeSwap_ROUTER02;
 		address _WETH = Router02(_router).WETH();
 		if (_token == _WETH) {
-			WETH(_token).deposit{value: _amount}();
+			WBNB(_token).deposit{value: _amount}();
 		} else {
 			address[] memory _path = new address[](2);
 			_path[0] = _WETH;
