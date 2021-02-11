@@ -25,7 +25,7 @@
     "deploy": "truffle migrate",
     "deploy:bscmain": "truffle migrate --network bscmain",
     "deploy:chapel": "truffle migrate --network chapel",
-    "source": "truffle-flattener contracts/GTokens.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n\\n/' > PMINE.sol",
+    "source": "truffle-flattener contracts/Deployer.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n\\n/' > PMINE.sol",
     "test": "truffle test",
     "stress-test": "npm run deploy && node stress-test/index.js"
   },

@@ -13,14 +13,14 @@ import { $ } from "./network/$.sol";
 
 contract Deployer
 {
-	address constant PMINE_TREASURY = 0x0000000000000000000000000000000000000000;
+	address constant PMINE_TREASURY = 0x0000000000000000000000000000000000000001; // TODO update this address
 
 	uint256 constant PMINE_TOTAL_SUPPLY = 20000e18; // 20k
 	uint256 constant SAFE_TOTAL_SUPPLY = 168675e18; // 168,675
 
 	uint256 constant PMINE_TREASURY_ALLOCATION = 10000e18; // 10k
 	uint256 constant PMINE_FARMING_ALLOCATION = 8000e18; // 8k
-	uint256 constant PMINE_SWAPPING_ALLOCATION = 12000e18; // 12k
+	uint256 constant PMINE_SWAPPING_ALLOCATION = 2000e18; // 2k
 
 	struct Payment {
 		address receiver;
