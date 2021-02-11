@@ -15,7 +15,7 @@ contract GTokenRegistry is Ownable
 	 * @param _oldGrowthToken The address of the token implementation
 	 *                        being replaced, for upgrades, or 0x0 0therwise.
 	 */
-	function registerNewToken(address _growthToken, address _oldGrowthToken) public onlyOwner
+	function registerNewToken(address _growthToken, address _oldGrowthToken) external onlyOwner
 	{
 		emit NewToken(_growthToken, _oldGrowthToken);
 	}

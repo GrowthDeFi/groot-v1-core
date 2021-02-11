@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
+import { Ownable } from "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
 import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
 
 import { GTokenRegistry } from "./GTokenRegistry.sol";
@@ -11,7 +12,7 @@ import { Transfers } from "./modules/Transfers.sol";
 
 import { $ } from "./network/$.sol";
 
-contract Deployer
+contract Deployer is Ownable
 {
 	address constant PMINE_TREASURY = 0x0000000000000000000000000000000000000001; // TODO update this address
 
@@ -32,7 +33,7 @@ contract Deployer
 
 	address[] public contracts;
 
-	function registerReceiversPMINE(address[] memory _receivers, uint256[] memory _amounts) external
+	function registerReceiversPMINE(address[] memory _receivers, uint256[] memory _amounts) external onlyOwner
 	{
 		require(_receivers.length == _amounts.length, "length mismatch");
 		for (uint256 _i = 0; _i < _receivers.length; _i++) {
@@ -43,7 +44,7 @@ contract Deployer
 		}
 	}
 
-	function registerReceiversSAFE(address[] memory _receivers, uint256[] memory _amounts) external
+	function registerReceiversSAFE(address[] memory _receivers, uint256[] memory _amounts) external onlyOwner
 	{
 		require(_receivers.length == _amounts.length, "length mismatch");
 		for (uint256 _i = 0; _i < _receivers.length; _i++) {
@@ -54,7 +55,7 @@ contract Deployer
 		}
 	}
 
-	function deploy() external
+	function deploy() external onlyOwner
 	{
 		require($.NETWORK == $.network(), "wrong network");
 
@@ -89,6 +90,8 @@ contract Deployer
 		contracts.push(_bridge);
 		contracts.push(_PMINE);
 		contracts.push(_SAFE);
+
+		renounceOwnership();
 	}
 }
 
