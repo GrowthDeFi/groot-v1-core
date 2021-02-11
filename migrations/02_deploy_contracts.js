@@ -7,7 +7,8 @@ module.exports = async (deployer, network, [account]) => {
   const contract = await deployer.deploy(Deployer);
 
   console.log('Adding PMINE wallets...');
-  await contract.registerReceiversPMINE([account], [2000n * 10n ** 18n]);
+  const listPMINE = require('./listPMINE.json');
+  await contract.registerReceiversPMINE(listPMINE.map(([address,]) => address), listPMINE.map(([,cents]) => BigInt(cents) * 10n ** 16n));
 
   console.log('Adding SAFE wallets...');
   const listSAFE = require('./listSAFE.json');
