@@ -5,9 +5,15 @@ module.exports = async (deployer, network, [account]) => {
   await deployer.deploy(LibDeployer);
   deployer.link(LibDeployer, Deployer);
   const contract = await deployer.deploy(Deployer);
+
+  console.log('Adding PMINE wallets...');
+  await contract.registerReceiversPMINE([account], [2000n * 10n ** 18n]);
+
+  console.log('Adding SAFE wallets...');
+  const listSAFE = require('./listSAFE.json');
+  await contract.registerReceiversSAFE(listSAFE.map(([address,]) => address), listSAFE.map(([,cents]) => BigInt(cents) * 10n ** 16n));
+
   if (['development'].includes(network)) {
-    await contract.registerReceiversPMINE([account], [2000n * 10n ** 18n]);
-    await contract.registerReceiversSAFE([account], [168675n * 10n ** 18n]);
     await contract.deploy();
   }
 };
