@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 pragma solidity 0.6.12;
 
 import '@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol';
@@ -5,7 +6,7 @@ import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
 
-import "./CakeToken.sol";
+import { GRewardToken } from "./GRewardToken.sol";
 import "./SyrupBar.sol";
 
 // import "@nomiclabs/buidler/console.sol";
@@ -60,7 +61,7 @@ contract MasterChef is Ownable {
     }
 
     // The CAKE TOKEN!
-    CakeToken public cake;
+    GRewardToken public cake;
     // The SYRUP TOKEN!
     SyrupBar public syrup;
     // Dev address.
@@ -86,7 +87,7 @@ contract MasterChef is Ownable {
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
 
     constructor(
-        CakeToken _cake,
+        GRewardToken _cake,
         SyrupBar _syrup,
         address _devaddr,
         uint256 _cakePerBlock,
@@ -108,6 +109,10 @@ contract MasterChef is Ownable {
 
         totalAllocPoint = 1000;
 
+    }
+
+    function updateCakePerBlock(uint256 _cakePerBlock) public onlyOwner {
+        cakePerBlock = _cakePerBlock;
     }
 
     function updateMultiplier(uint256 multiplierNumber) public onlyOwner {

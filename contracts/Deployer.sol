@@ -6,7 +6,11 @@ import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP
 
 import { GTokenRegistry } from "./GTokenRegistry.sol";
 import { GNativeBridge } from "./GNativeBridge.sol";
+import { GRewardToken } from "./GRewardToken.sol";
 import { PMINE, SAFE } from "./GTokens.sol";
+
+import { MasterChef } from "./MasterChef.sol";
+import { SyrupBar } from "./SyrupBar.sol";
 
 import { Transfers } from "./modules/Transfers.sol";
 
@@ -62,11 +66,14 @@ contract Deployer is Ownable
 		require($.NETWORK == $.network(), "wrong network");
 
 		// deploy contracts
-		address _registry = LibDeployer.publishGTokenRegistry();
-		address _bridge = LibDeployer.publishGNativeBridge();
+		address _registry = LibDeployer1.publishGTokenRegistry();
+		address _bridge = LibDeployer1.publishGNativeBridge();
 
-		address _PMINE = LibDeployer.publishPMINE(PMINE_TOTAL_SUPPLY);
-		address _SAFE = LibDeployer.publishSAFE(SAFE_TOTAL_SUPPLY);
+		address _PMINE = LibDeployer1.publishPMINE(PMINE_TOTAL_SUPPLY);
+		address _SAFE = LibDeployer1.publishSAFE(SAFE_TOTAL_SUPPLY);
+
+		address _syrupBar = LibDeployer2.publishSyrupBar(_PMINE);
+		address _masterChef = LibDeployer3.publishMasterChef(_PMINE, _syrupBar);
 
 		// transfer treasury and farming pools to the treasury
 		IBEP20(_PMINE).transfer(PMINE_TREASURY, PMINE_TREASURY_ALLOCATION);
@@ -91,15 +98,22 @@ contract Deployer is Ownable
 		// register tokens
 		GTokenRegistry(_registry).registerNewToken(_PMINE, address(0));
 		GTokenRegistry(_registry).registerNewToken(_SAFE, address(0));
+		GTokenRegistry(_registry).registerNewToken(_syrupBar, address(0));
 
 		// transfer ownerships
 		GTokenRegistry(_registry).transferOwnership(PMINE_TREASURY);
+		PMINE(_PMINE).transferOwnership(_masterChef);
+		SAFE(_SAFE).transferOwnership(PMINE_TREASURY);
+		SyrupBar(_syrupBar).transferOwnership(_masterChef);
+		MasterChef(_masterChef).transferOwnership(PMINE_TREASURY);
 
 		// make contract addresses visible
 		contracts.push(_registry);
 		contracts.push(_bridge);
 		contracts.push(_PMINE);
 		contracts.push(_SAFE);
+		contracts.push(_syrupBar);
+		contracts.push(_masterChef);
 
 		// wrap up the deployment
 		deployed = true;
@@ -110,7 +124,7 @@ contract Deployer is Ownable
 	event DeployPerformed();
 }
 
-library LibDeployer
+library LibDeployer1
 {
 	function publishGTokenRegistry() public returns (address _address)
 	{
@@ -130,5 +144,21 @@ library LibDeployer
 	function publishSAFE(uint256 _totalSupply) public returns (address _address)
 	{
 		return address(new SAFE(_totalSupply));
+	}
+}
+
+library LibDeployer2
+{
+	function publishSyrupBar(address _rewardToken) public returns (address _address)
+	{
+		return address(new SyrupBar(GRewardToken(_rewardToken)));
+	}
+}
+
+library LibDeployer3
+{
+	function publishMasterChef(address _rewardToken, address _syrup) public returns (address _address)
+	{
+		return address(new MasterChef(GRewardToken(_rewardToken), SyrupBar(_syrup), _rewardToken, 0, block.number));
 	}
 }

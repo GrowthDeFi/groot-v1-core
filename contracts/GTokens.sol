@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { GPlainToken } from "./GPlainToken.sol";
+import { GRewardToken } from "./GRewardToken.sol";
 import { GDeflationaryToken } from "./GDeflationaryToken.sol";
 
 import { $ } from "./network/$.sol";
 
-contract PMINE is GPlainToken
+contract PMINE is GRewardToken
 {
 	constructor (uint256 _totalSupply)
-		GPlainToken("PMINE", "PMINE", 18, _totalSupply) public
+		GRewardToken("PMINE", "PMINE", 18, _totalSupply) public
 	{
 	}
 }
