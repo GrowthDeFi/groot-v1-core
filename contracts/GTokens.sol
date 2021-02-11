@@ -7,16 +7,16 @@ import { $ } from "./network/$.sol";
 
 contract PMINE is GPlainToken
 {
-	constructor ()
-		GPlainToken("PMINE", "PMINE", 18, 20000e18) public
+	constructor (uint256 _totalSupply)
+		GPlainToken("PMINE", "PMINE", 18, _totalSupply) public
 	{
 	}
 }
 
 contract SAFE is GPlainToken
 {
-	constructor ()
-		GPlainToken("rAAVE Debt Token", "SAFE", 18, 1400000e18) public
+	constructor (uint256 _totalSupply)
+		GPlainToken("rAAVE Debt Token", "SAFE", 18, _totalSupply) public
 	{
 	}
 }
