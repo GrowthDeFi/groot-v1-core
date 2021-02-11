@@ -24,5 +24,5 @@ jobs:
     - run: env > .env
       env:
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-    - run: ./scripts/start-bscmain-fork.sh & npm test:bscmain
-    - run: ./scripts/start-chapel-fork.sh & npm test:chapel
+    - run: ./scripts/start-bscmain-fork.sh & npm run test:bscmain
+    - run: ./scripts/start-chapel-fork.sh & npm run test:chapel
