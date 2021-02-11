@@ -31,6 +31,7 @@ module.exports = async (deployer, network, [account]) => {
   }
 
   if (['development'].includes(network)) {
+    console.log('Performing the deploy...');
     await contract.deploy();
   }
 };
