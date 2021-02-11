@@ -2,6 +2,7 @@
 pragma solidity ^0.6.0;
 
 import { GPlainToken } from "./GPlainToken.sol";
+import { GDeflationaryToken } from "./GDeflationaryToken.sol";
 
 import { $ } from "./network/$.sol";
 
@@ -13,20 +14,10 @@ contract PMINE is GPlainToken
 	}
 }
 
-contract SAFE is GPlainToken
+contract SAFE is GDeflationaryToken
 {
 	constructor (uint256 _totalSupply)
 		GPlainToken("rAAVE Debt Token", "SAFE", 18, _totalSupply) public
 	{
 	}
 }
-
-/*
-contract stkBNB_PMINE is GLPMiningToken
-{
-	constructor (address _BNB_PMINE, address _PMINE)
-		GLPMiningToken("staked BNB/PMINE", "stkBNB/PMINE", 18, _BNB_PMINE, _PMINE) public
-	{
-	}
-}
-*/
