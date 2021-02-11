@@ -9,7 +9,7 @@ library $
 {
 	enum Network { Bscmain, Chapel }
 
-	Network constant NETWORK = Network.Chapel;
+	Network constant NETWORK = Network.Bscmain;
 
 	function network() internal pure returns (Network _network)
 	{

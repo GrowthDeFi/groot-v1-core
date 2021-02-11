@@ -83,6 +83,7 @@ contract Deployer
 
 		GTokenRegistry(_registry).registerNewToken(_PMINE, address(0));
 		GTokenRegistry(_registry).registerNewToken(_SAFE, address(0));
+		GTokenRegistry(_registry).transferOwnership(PMINE_TREASURY);
 
 		contracts.push(_registry);
 		contracts.push(_bridge);
