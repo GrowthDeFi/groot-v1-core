@@ -17,7 +17,7 @@ contract PMINE is GPlainToken
 contract SAFE is GDeflationaryToken
 {
 	constructor (uint256 _totalSupply)
-		GPlainToken("rAAVE Debt Token", "SAFE", 18, _totalSupply) public
+		GDeflationaryToken("rAAVE Debt Token", "SAFE", 18, _totalSupply) public
 	{
 	}
 }
