@@ -7,7 +7,8 @@ source .env
 npx ganache-cli \
 	-q \
 	-h 0.0.0.0 \
-	-i 1 \
+	-i 56 \
+	--chainId 56 \
 	-l $GAS_LIMIT \
-	-f wss://mainnet.infura.io/ws/v3/$INFURA_PROJECT_ID \
+	-f https://bsc-dataseed.binance.org/ \
 	--account $PRIVATE_KEY,100000000000000000000

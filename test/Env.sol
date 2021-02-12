@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { SafeMath } from "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol";
 
 import { Transfers } from "../contracts/modules/Transfers.sol";
 
 import { Router02 } from "../contracts/interop/UniswapV2.sol";
-import { WETH } from "../contracts/interop/WrappedEther.sol";
+import { WBNB } from "../contracts/interop/WrappedBNB.sol";
 
 import { $ } from "../contracts/network/$.sol";
 
@@ -25,10 +25,10 @@ contract Env
 
 	function _mint(address _token, uint256 _amount) internal
 	{
-		address _router = $.UniswapV2_ROUTER02;
+		address _router = $.PancakeSwap_ROUTER02;
 		address _WETH = Router02(_router).WETH();
 		if (_token == _WETH) {
-			WETH(_token).deposit{value: _amount}();
+			WBNB(_token).deposit{value: _amount}();
 		} else {
 			address[] memory _path = new address[](2);
 			_path[0] = _WETH;

@@ -24,5 +24,5 @@ jobs:
     - run: env > .env
       env:
         PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-        INFURA_PROJECT_ID: ${{ secrets.INFURA_PROJECT_ID }}
-    - run: ./scripts/start-mainnet-fork.sh & npm test
+    - run: ./scripts/start-bscmain-fork.sh & npm run test:bscmain && pkill node
+    - run: ./scripts/start-chapel-fork.sh & npm run test:chapel && pkill node

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { WETH } from "../interop/WrappedEther.sol";
+import { WBNB } from "../interop/WrappedBNB.sol";
 
 import { $ } from "../network/$.sol";
 
@@ -17,7 +17,7 @@ library Wrapping
 	function _wrap(uint256 _amount) internal
 	{
 		if (_amount == 0) return;
-		WETH($.WETH).deposit{value: _amount}();
+		WBNB($.WBNB).deposit{value: _amount}();
 	}
 
 	/**
@@ -29,6 +29,6 @@ library Wrapping
 	function _unwrap(uint256 _amount) internal
 	{
 		if (_amount == 0) return;
-		WETH($.WETH).withdraw(_amount);
+		WBNB($.WBNB).withdraw(_amount);
 	}
 }

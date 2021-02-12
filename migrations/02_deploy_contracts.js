@@ -1,120 +1,43 @@
-const GUniswapV2Exchange = artifacts.require('GUniswapV2Exchange');
-const GEtherBridge = artifacts.require('GEtherBridge');
-const GTokenRegistry = artifacts.require('GTokenRegistry');
-const GTokenSwapper = artifacts.require('GTokenSwapper');
-const PMINE = artifacts.require('PMINE');
-const IERC20 = artifacts.require('IERC20');
-const Factory = artifacts.require('Factory');
-const Pair = artifacts.require('Pair');
-const stkGRO_PMINE = artifacts.require('stkGRO_PMINE');
-const stkETH_PMINE = artifacts.require('stkETH_PMINE');
+const Deployer = artifacts.require('Deployer');
+const LibDeployer1 = artifacts.require('LibDeployer1');
+const LibDeployer2 = artifacts.require('LibDeployer2');
+const LibDeployer3 = artifacts.require('LibDeployer3');
 
-const UniswapV2_FACTORY = {
-	'development': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-	'mainnet': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-	'ropsten': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-	'rinkeby': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-	'kovan': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-	'goerli': '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f',
-};
-
-const GRO = {
-	'development': '0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0',
-	'mainnet': '0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0',
-	'ropsten': '0x5BaF82B5Eddd5d64E03509F0a7dBa4Cbf88CF455',
-	'rinkeby': '0x020e317e70B406E23dF059F3656F6fc419411401',
-	'kovan': '0xFcB74f30d8949650AA524d8bF496218a20ce2db4',
-	'goerli': '0x0000000000000000000000000000000000000000',
-};
-
-const WETH = {
-	'development': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-	'mainnet': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-	'ropsten': '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-	'rinkeby': '0xc778417E063141139Fce010982780140Aa0cD5Ab',
-	'kovan': '0xd0A1E359811322d97991E03f863a0C30C2cF029C',
-	'goerli': '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6',
-};
-
-const rAAVE = {
-	'development': '0x3371De12E8734c76F70479Dae3A9f3dC80CDCEaB',
-	'mainnet': '0x3371De12E8734c76F70479Dae3A9f3dC80CDCEaB',
-	'ropsten': '0x0000000000000000000000000000000000000000',
-	'rinkeby': '0x0000000000000000000000000000000000000000',
-	'kovan': '0x8093f3ed0caec39ff182243362d167714cc02f99',
-	'goerli': '0x0000000000000000000000000000000000000000',
-};
-
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+function chunks(array, size = 100) {
+  const result = [];
+  for (let i = 0, j = size; i < array.length; i = j, j += size) {
+      result.push(array.slice(i, j));
+  }
+  return result;
+}
 
 module.exports = async (deployer, network, [account]) => {
-  // publish dependencies
-  await deployer.deploy(GUniswapV2Exchange);
-  await deployer.deploy(GEtherBridge);
-  await deployer.deploy(GTokenRegistry);
+  await deployer.deploy(LibDeployer1);
+  await deployer.deploy(LibDeployer2);
+  await deployer.deploy(LibDeployer3);
+  deployer.link(LibDeployer1, Deployer);
+  deployer.link(LibDeployer2, Deployer);
+  deployer.link(LibDeployer3, Deployer);
+  const contract = await deployer.deploy(Deployer);
 
-  // setup deployment helpers
-  const faucet = await GUniswapV2Exchange.deployed();
-  const factory = await Factory.at(UniswapV2_FACTORY[network]);
-  const registry = await GTokenRegistry.deployed();
-
-  // publish PMINE contract
-  await deployer.deploy(PMINE);
-  const pmine = await PMINE.deployed();
-  await registry.registerNewToken(pmine.address, ZERO_ADDRESS);
-
-  // publish swapper
-  {
-    const raave = await IERC20.at(rAAVE[network]);
-    const balance = await raave.totalSupply();
-    await deployer.deploy(GTokenSwapper, raave.address, balance, pmine.address, BigInt(2000e18));
+  const listPMINE = require('./listPMINE.json');
+  console.log('Adding ' + listPMINE.length + ' PMINE wallets...');
+  for (const list of chunks(listPMINE)) {
+    const addresses = list.map(([address,]) => address);
+    const amounts = list.map(([,units]) => BigInt(units) * 10n ** 12n);
+    await contract.registerReceiversPMINE(addresses, amounts);
   }
 
-  {
-    // mint GRO
-    const gro = await IERC20.at(GRO[network]);
-    await faucet.faucet(gro.address, `${1e18}`, { value: `${2e18}` });
-
-    // create pool
-    await factory.createPair(gro.address, pmine.address);
-    const pair = await Pair.at(await factory.getPair(gro.address, pmine.address));
-    await gro.transfer(pair.address, `${1e18}`);
-    await pmine.transfer(pair.address, `${1e18}`);
-    await pair.mint(account);
-
-    // publish staking contract
-    await deployer.deploy(stkGRO_PMINE, pair.address, pmine.address);
-    const stkgro_pmine = await stkGRO_PMINE.deployed();
-    await pair.transfer(stkgro_pmine.address, `${1}`);
-    await registry.registerNewToken(stkgro_pmine.address, ZERO_ADDRESS);
-
-    // stake LP shares
-    const shares = await pair.balanceOf(account);
-    await pair.approve(stkgro_pmine.address, shares);
-    await stkgro_pmine.deposit(shares);
+  const listSAFE = require('./listSAFE.json');
+  console.log('Adding ' + listSAFE.length + ' SAFE wallets...');
+  for (const list of chunks(listSAFE)) {
+    const addresses = list.map(([address,]) => address);
+    const amounts = list.map(([,cents]) => BigInt(cents) * 10n ** 16n);
+    await contract.registerReceiversSAFE(addresses, amounts);
   }
 
-  {
-    // mint WETH
-    const weth = await IERC20.at(WETH[network]);
-    await faucet.faucet(weth.address, `${1e18}`, { value: `${2e18}` });
-
-    // create pool
-    await factory.createPair(weth.address, pmine.address);
-    const pair = await Pair.at(await factory.getPair(weth.address, pmine.address));
-    await weth.transfer(pair.address, `${1e18}`);
-    await pmine.transfer(pair.address, `${1e18}`);
-    await pair.mint(account);
-
-    // publish staking contract
-    await deployer.deploy(stkETH_PMINE, pair.address, pmine.address);
-    const stketh_pmine = await stkETH_PMINE.deployed();
-    await pair.transfer(stketh_pmine.address, `${1}`);
-    await registry.registerNewToken(stketh_pmine.address, ZERO_ADDRESS);
-
-    // stake LP shares
-    const shares = await pair.balanceOf(account);
-    await pair.approve(stketh_pmine.address, shares);
-    await stketh_pmine.deposit(shares);
+  if (['development'].includes(network)) {
+    console.log('Performing the deploy...');
+    await contract.deploy();
   }
 };

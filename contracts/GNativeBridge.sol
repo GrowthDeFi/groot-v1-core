@@ -8,13 +8,13 @@ import { Wrapping } from "./modules/Wrapping.sol";
 
 import { $ } from "./network/$.sol";
 
-contract GEtherBridge
+contract GNativeBridge
 {
 	function deposit(address _stakeToken, uint256 _minShares) external payable
 	{
 		address _from = msg.sender;
 		uint256 _amount = msg.value;
-		address _token = $.WETH;
+		address _token = $.WBNB;
 		Wrapping._wrap(_amount);
 		Transfers._approveFunds(_token, _stakeToken, _amount);
 		GLPMining(_stakeToken).depositToken(_token, _amount, _minShares);
@@ -25,7 +25,7 @@ contract GEtherBridge
 	function withdraw(address _stakeToken, uint256 _shares, uint256 _minAmount) external
 	{
 		address payable _from = msg.sender;
-		address _token = $.WETH;
+		address _token = $.WBNB;
 		Transfers._pullFunds(_stakeToken, _from, _shares);
 		GLPMining(_stakeToken).withdrawToken(_token, _shares, _minAmount);
 		uint256 _amount = Transfers._getBalance(_token);
