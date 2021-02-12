@@ -100,22 +100,22 @@ contract Deployer is Ownable
 		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT);
 
 		// create LPs
-//		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
-//		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
+		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
+		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
 
 		// adds liquidity to LPs and stake LP shares on MasterChef
-//		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
-//		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
-//		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
-//		Transfers._approveFunds(gROOT_WBNB, masterChef, _lpshares);
-//		MasterChef(masterChef).deposit(1, _lpshares);
+		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
+		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
+		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
+		Transfers._approveFunds(gROOT_WBNB, masterChef, _lpshares);
+		MasterChef(masterChef).deposit(1, _lpshares); // TODO as is LP shares are lost forever here because Deployer is the owner
 
 		// transfer treasury and farming funds to the treasury
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_FARMING_ALLOCATION);
 
-//		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
-//		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
+		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
+		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
 
 		// register tokens
 		GTokenRegistry(registry).registerNewToken(gROOT, address(0));
