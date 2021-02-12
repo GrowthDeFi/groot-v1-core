@@ -13,7 +13,7 @@ contract GDeflationaryToken is BEP20
 		_mint(_sender, _initialSupply);
 	}
 
-	function burn(uint256 _amount) external
+	function burn(uint256 _amount) external onlyOwner
 	{
 		address _sender = msg.sender;
 		_burn(_sender, _amount);

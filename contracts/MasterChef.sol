@@ -7,7 +7,7 @@ import '@pancakeswap/pancake-swap-lib/contracts/token/BEP20/SafeBEP20.sol';
 import '@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol';
 
 import { GRewardToken } from "./GRewardToken.sol";
-import "./SyrupBar.sol";
+import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 
 // import "@nomiclabs/buidler/console.sol";
 
@@ -63,7 +63,7 @@ contract MasterChef is Ownable {
     // The CAKE TOKEN!
     GRewardToken public cake;
     // The SYRUP TOKEN!
-    SyrupBar public syrup;
+    GRewardStakeToken public syrup;
     // Dev address.
     address public devaddr;
     // CAKE tokens created per block.
@@ -88,7 +88,7 @@ contract MasterChef is Ownable {
 
     constructor(
         GRewardToken _cake,
-        SyrupBar _syrup,
+        GRewardStakeToken _syrup,
         address _devaddr,
         uint256 _cakePerBlock,
         uint256 _startBlock
@@ -326,7 +326,7 @@ contract MasterChef is Ownable {
 
     // Safe cake transfer function, just in case if rounding error causes pool to not have enough CAKEs.
     function safeCakeTransfer(address _to, uint256 _amount) internal {
-        syrup.safeCakeTransfer(_to, _amount);
+        syrup.safeRewardTransfer(_to, _amount);
     }
 
     // Update dev address by the previous dev.

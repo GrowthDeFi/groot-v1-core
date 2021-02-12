@@ -7,10 +7,10 @@ import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP
 import { GTokenRegistry } from "./GTokenRegistry.sol";
 import { GNativeBridge } from "./GNativeBridge.sol";
 import { GRewardToken } from "./GRewardToken.sol";
-import { gROOT, SAFE } from "./GTokens.sol";
+import { GRewardStakeToken } from "./GRewardStakeToken.sol";
+import { gROOT, stkgROOT, SAFE } from "./GTokens.sol";
 
 import { MasterChef } from "./MasterChef.sol";
-import { SyrupBar } from "./SyrupBar.sol";
 
 import { Transfers } from "./modules/Transfers.sol";
 
@@ -69,11 +69,12 @@ contract Deployer is Ownable
 		address _registry = LibDeployer1.publishGTokenRegistry();
 		address _bridge = LibDeployer1.publishGNativeBridge();
 
-		address _gROOT = LibDeployer1.publishGROOT(GROOT_TOTAL_SUPPLY);
 		address _SAFE = LibDeployer1.publishSAFE(SAFE_TOTAL_SUPPLY);
 
-		address _syrupBar = LibDeployer2.publishSyrupBar(_gROOT);
-		address _masterChef = LibDeployer3.publishMasterChef(_gROOT, _syrupBar);
+		address _gROOT = LibDeployer2.publishGROOT(GROOT_TOTAL_SUPPLY);
+		address _stkgROOT = LibDeployer2.publishSTKGROOT(_gROOT);
+
+		address _masterChef = LibDeployer3.publishMasterChef(_gROOT, _stkgROOT);
 
 		// transfer treasury and farming pools to the treasury
 		IBEP20(_gROOT).transfer(GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
@@ -98,21 +99,22 @@ contract Deployer is Ownable
 		// register tokens
 		GTokenRegistry(_registry).registerNewToken(_gROOT, address(0));
 		GTokenRegistry(_registry).registerNewToken(_SAFE, address(0));
-		GTokenRegistry(_registry).registerNewToken(_syrupBar, address(0));
+		GTokenRegistry(_registry).registerNewToken(_stkgROOT, address(0));
 
 		// transfer ownerships
-		GTokenRegistry(_registry).transferOwnership(GROOT_TREASURY);
 		gROOT(_gROOT).transferOwnership(_masterChef);
-		SAFE(_SAFE).transferOwnership(GROOT_TREASURY);
-		SyrupBar(_syrupBar).transferOwnership(_masterChef);
+		stkgROOT(_stkgROOT).transferOwnership(_masterChef);
+
+		GTokenRegistry(_registry).transferOwnership(GROOT_TREASURY);
 		MasterChef(_masterChef).transferOwnership(GROOT_TREASURY);
+		SAFE(_SAFE).transferOwnership(GROOT_TREASURY);
 
 		// make contract addresses visible
 		contracts.push(_registry);
 		contracts.push(_bridge);
 		contracts.push(_gROOT);
 		contracts.push(_SAFE);
-		contracts.push(_syrupBar);
+		contracts.push(_stkgROOT);
 		contracts.push(_masterChef);
 
 		// wrap up the deployment
@@ -136,11 +138,6 @@ library LibDeployer1
 		return address(new GNativeBridge());
 	}
 
-	function publishGROOT(uint256 _totalSupply) public returns (address _address)
-	{
-		return address(new gROOT(_totalSupply));
-	}
-
 	function publishSAFE(uint256 _totalSupply) public returns (address _address)
 	{
 		return address(new SAFE(_totalSupply));
@@ -149,16 +146,21 @@ library LibDeployer1
 
 library LibDeployer2
 {
-	function publishSyrupBar(address _rewardToken) public returns (address _address)
+	function publishGROOT(uint256 _totalSupply) public returns (address _address)
 	{
-		return address(new SyrupBar(GRewardToken(_rewardToken)));
+		return address(new gROOT(_totalSupply));
+	}
+
+	function publishSTKGROOT(address _rewardToken) public returns (address _address)
+	{
+		return address(new stkgROOT(_rewardToken));
 	}
 }
 
 library LibDeployer3
 {
-	function publishMasterChef(address _rewardToken, address _syrup) public returns (address _address)
+	function publishMasterChef(address _rewardToken, address _stkgROOT) public returns (address _address)
 	{
-		return address(new MasterChef(GRewardToken(_rewardToken), SyrupBar(_syrup), _rewardToken, 0, block.number));
+		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_stkgROOT), _rewardToken, 0, block.number));
 	}
 }
