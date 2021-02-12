@@ -6,10 +6,10 @@ import { GDeflationaryToken } from "./GDeflationaryToken.sol";
 
 import { $ } from "./network/$.sol";
 
-contract PMINE is GRewardToken
+contract gROOT is GRewardToken
 {
 	constructor (uint256 _totalSupply)
-		GRewardToken("PMINE", "PMINE", 18, _totalSupply) public
+		GRewardToken("growth Root Token", "gROOT", 18, _totalSupply) public
 	{
 	}
 }

@@ -20,12 +20,12 @@ module.exports = async (deployer, network, [account]) => {
   deployer.link(LibDeployer3, Deployer);
   const contract = await deployer.deploy(Deployer);
 
-  const listPMINE = require('./listPMINE.json');
-  console.log('Adding ' + listPMINE.length + ' PMINE wallets...');
-  for (const list of chunks(listPMINE)) {
+  const listGROOT = require('./listGROOT.json');
+  console.log('Adding ' + listGROOT.length + ' gROOT wallets...');
+  for (const list of chunks(listGROOT)) {
     const addresses = list.map(([address,]) => address);
     const amounts = list.map(([,units]) => BigInt(units) * 10n ** 12n);
-    await contract.registerReceiversPMINE(addresses, amounts);
+    await contract.registerReceiversGROOT(addresses, amounts);
   }
 
   const listSAFE = require('./listSAFE.json');

@@ -1,7 +1,6 @@
 require('dotenv').config();
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const privateKey = process.env['PRIVATE_KEY'];
-const infuraProjectId = process.env['INFURA_PROJECT_ID'];
 
 module.exports = {
   compilers: {
@@ -16,13 +15,13 @@ module.exports = {
   networks: {
     bscmain: {
       network_id: 56,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
+      networkCheckTimeout: 10000, // fixes truffle bug
       provider: () => new HDWalletProvider(privateKey, 'wss://bsc-dataseed.binance.org/'),
       skipDryRun: true,
     },
     chapel: {
       network_id: 97,
-      networkCheckTimeout: 10000, // fixes truffle/infura bug
+      networkCheckTimeout: 10000, // fixes truffle bug
       provider: () => new HDWalletProvider(privateKey, 'wss://data-seed-prebsc-1-s1.binance.org:8545/'),
       skipDryRun: true,
     },

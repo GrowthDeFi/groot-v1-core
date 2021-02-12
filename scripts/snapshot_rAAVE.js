@@ -206,24 +206,24 @@ function processTxs() {
       }
     }
   }
-  const supplyPMINE = 2000n * 10n ** 6n;
+  const supplyGROOT = 2000n * 10n ** 6n;
   const output = [];
   let totalUnits = 0;
   for (const account in accountBalance) {
-    const units = Number(accountBalance[account] * supplyPMINE / contractBalance);
+    const units = Number(accountBalance[account] * supplyGROOT / contractBalance);
     if (units > 0) {
       output.push([account, units]);
       totalUnits += units;
     }
   }
   output.sort(([,a],[,b]) => a - b);
-  const supplyUnits = Number(supplyPMINE);
+  const supplyUnits = Number(supplyGROOT);
   const diffUnits = supplyUnits - totalUnits;
   for (let i = 0; i < diffUnits; i++) {
     output[i][1]++;
   }
   console.log(['TOTAL', output.reduce((sum, [,units]) => sum + units, 0), output.length]);
-  fs.writeFileSync('listPMINE.json', JSON.stringify(output, undefined, 2));
+  fs.writeFileSync('listGROOT.json', JSON.stringify(output, undefined, 2));
   exit();
 }
 
