@@ -11,7 +11,10 @@ import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 import { gROOT, stkgROOT, SAFE } from "./GTokens.sol";
 import { MasterChef } from "./MasterChef.sol";
 
+import { Factory, Pair } from "./interop/PancakeSwap.sol";
+
 import { Transfers } from "./modules/Transfers.sol";
+import { Wrapping } from "./modules/Wrapping.sol";
 
 import { $ } from "./network/$.sol";
 
@@ -20,12 +23,15 @@ contract Deployer is Ownable
 	address constant GROOT_TREASURY = 0x0000000000000000000000000000000000000001; // TODO update this address
 
 	uint256 constant GROOT_TOTAL_SUPPLY = 20000e18; // 20k
-	uint256 constant GROOT_TREASURY_ALLOCATION = 10000e18; // 10k
+	uint256 constant GROOT_TREASURY_ALLOCATION = 9750e18; // 9,750
+	uint256 constant GROOT_LIQUIDITY_ALLOCATION = 250e18; // 250
 	uint256 constant GROOT_FARMING_ALLOCATION = 8000e18; // 8k
 	uint256 constant GROOT_AIRDROP_ALLOCATION = 2000e18; // 2k
 
 	uint256 constant SAFE_TOTAL_SUPPLY = 168675e18; // 168,675
 	uint256 constant SAFE_AIRDROP_ALLOCATION = 168675e18; // 168,675
+
+	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 700e18; // 700
 
 	struct Payment {
 		address receiver;
@@ -41,6 +47,7 @@ contract Deployer is Ownable
 	address public gROOT;
 	address public stkgROOT;
 	address public masterChef;
+	address public gROOT_WBNB;
 
 	bool public deployed = false;
 	bool public airdropped = false;
@@ -72,9 +79,15 @@ contract Deployer is Ownable
 		}
 	}
 
-	function deploy() external onlyOwner
+	function deploy() payable external onlyOwner
 	{
+		uint256 _amount = msg.value;
+		require(_amount == WBNB_LIQUIDITY_ALLOCATION, "BNB amount mismatch");
+
 		require(!deployed, "deploy unavailable");
+
+		// wraps BNB into WBNB
+		Wrapping._wrap(WBNB_LIQUIDITY_ALLOCATION);
 
 		// deploy contracts
 		registry = LibDeployer1.publishGTokenRegistry();
@@ -86,13 +99,23 @@ contract Deployer is Ownable
 		stkgROOT = LibDeployer2.publishSTKGROOT(gROOT);
 		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT);
 
-		// transfer treasury and farming pools to the treasury
-		IBEP20(gROOT).transfer(GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
+		// create LPs
+//		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
+//		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
 
-		IBEP20(gROOT).transfer(GROOT_TREASURY, GROOT_FARMING_ALLOCATION);
+		// adds liquidity to LPs and stake LP shares on MasterChef
+//		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
+//		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
+//		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
+//		Transfers._approveFunds(gROOT_WBNB, masterChef, _lpshares);
+//		MasterChef(masterChef).deposit(1, _lpshares);
 
-		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
-		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
+		// transfer treasury and farming funds to the treasury
+		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
+		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_FARMING_ALLOCATION);
+
+//		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
+//		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
 
 		// register tokens
 		GTokenRegistry(registry).registerNewToken(gROOT, address(0));
@@ -122,13 +145,13 @@ contract Deployer is Ownable
 		// airdrops gROOT
 		for (uint256 _i = 0; _i < paymentsGROOT.length; _i++) {
 			Payment storage _payment = paymentsGROOT[_i];
-			IBEP20(gROOT).transfer(_payment.receiver, _payment.amount);
+			Transfers._pushFunds(gROOT, _payment.receiver, _payment.amount);
 		}
 
 		// ardrops SAFE
 		for (uint256 _i = 0; _i < paymentsSAFE.length; _i++) {
 			Payment storage _payment = paymentsSAFE[_i];
-			IBEP20(SAFE).transfer(_payment.receiver, _payment.amount);
+			Transfers._pushFunds(SAFE, _payment.receiver, _payment.amount);
 		}
 
 		require(Transfers._getBalance(gROOT) == 0, "gROOT left over");
