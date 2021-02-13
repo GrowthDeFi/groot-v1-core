@@ -5,7 +5,7 @@ import { SafeMath } from "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.
 
 import { Transfers } from "../contracts/modules/Transfers.sol";
 
-import { Router02 } from "../contracts/interop/UniswapV2.sol";
+import { Router02 } from "../contracts/interop/PancakeSwap.sol";
 import { WBNB } from "../contracts/interop/WrappedBNB.sol";
 
 import { $ } from "../contracts/network/$.sol";
@@ -26,12 +26,12 @@ contract Env
 	function _mint(address _token, uint256 _amount) internal
 	{
 		address _router = $.PancakeSwap_ROUTER02;
-		address _WETH = Router02(_router).WETH();
-		if (_token == _WETH) {
+		address _WBNB = Router02(_router).WETH();
+		if (_token == _WBNB) {
 			WBNB(_token).deposit{value: _amount}();
 		} else {
 			address[] memory _path = new address[](2);
-			_path[0] = _WETH;
+			_path[0] = _WBNB;
 			_path[1] = _token;
 			Router02(_router).swapETHForExactTokens{value: address(this).balance}(_amount, _path, address(this), block.timestamp);
 		}
