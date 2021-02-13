@@ -93,9 +93,8 @@ async function verifyContract(name, address, sourceCode, args, libs, apiKey, tes
     libraryaddress10: libs[9].address,
   };
   const headers = {'content-type':'application/x-www-form-urlencoded; charset=UTF-8'};
-  const result = await urlfetch('post', url, serialize(data), headers);
-  if (result.status !== '1' || result.message !== 'Ok') return result.message;
-  return result.result;
+  const { result } = await urlfetch('post', url, serialize(data), headers);
+  return result;
 }
 
 const HTTP_PROVIDER_URL = {
@@ -120,16 +119,16 @@ function instanceOf(web3, name, testnet) {
 }
 
 async function publishSourceCode(sourceCode, name, args = '', libNames = [], address = null) {
-  console.log('Submitting ' + name + ' source code ...');
   const apiKey = BSCSCAN_API_KEY;
   const testnet = isTestnet(sourceCode);
   if (address === null) address = addressOf(name, testnet);
+  console.log('Submitting source code for ' + name + ' at ' + address + ' ...');
   const libs = libNames.map((name) => ({ name, address: addressOf(name, testnet) }));
   while (libs.length < 10) libs.push({ name: '', address: '' });
   return await verifyContract(name, address, sourceCode, args, libs, apiKey, testnet);
 }
 
-async function main(args) {
+async function main() {
   const fileName = 'gROOT';
   const name = 'Deployer';
   const args = '';
