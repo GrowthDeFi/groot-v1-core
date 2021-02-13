@@ -22,13 +22,14 @@ import { $ } from "./network/$.sol";
 
 contract Deployer is Ownable
 {
-	address constant GROOT_TREASURY = 0x0000000000000000000000000000000000000001; // TODO update this address
+	address constant GROOT_TREASURY = 0xFDf35F1Bfe270e636f535a45Ce8D02457676e050; // TODO update this address
 
-	uint256 constant GROOT_TOTAL_SUPPLY = 20000e18; // 20k
+	uint256 constant GROOT_TOTAL_SUPPLY = 20000e18; // 20,000
 	uint256 constant GROOT_TREASURY_ALLOCATION = 9750e18; // 9,750
 	uint256 constant GROOT_LIQUIDITY_ALLOCATION = 250e18; // 250
-	uint256 constant GROOT_FARMING_ALLOCATION = 8000e18; // 8k
-	uint256 constant GROOT_AIRDROP_ALLOCATION = 2000e18; // 2k
+	uint256 constant GROOT_FARMING_ALLOCATION = 7999e18; // 7,999
+	uint256 constant GROOT_INITIAL_FARMING_ALLOCATION = 1e18; // 1
+	uint256 constant GROOT_AIRDROP_ALLOCATION = 2000e18; // 2,000
 
 	uint256 constant SAFE_TOTAL_SUPPLY = 168675e18; // 168,675
 	uint256 constant SAFE_AIRDROP_ALLOCATION = 168675e18; // 168,675
@@ -109,6 +110,7 @@ contract Deployer is Ownable
 		gROOT = LibDeployer2.publishGROOT(GROOT_TOTAL_SUPPLY);
 		stkgROOT = LibDeployer2.publishSTKGROOT(gROOT);
 		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT, INITIAL_GROOT_PER_BLOCK);
+		GRewardToken(gROOT).allocateReward(GROOT_INITIAL_FARMING_ALLOCATION);
 
 		// create gROOT/BNB LP and register it for reward distribution
 		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);

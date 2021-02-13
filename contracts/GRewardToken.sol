@@ -15,7 +15,7 @@ contract GRewardToken is BEP20
 		_mint(_sender, _initialSupply);
 	}
 
-	function depositReward(uint256 _amount) external
+	function allocateReward(uint256 _amount) external
 	{
 		address _from = msg.sender;
 		address _to = address(this);
