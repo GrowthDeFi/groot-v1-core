@@ -2,6 +2,7 @@ const Deployer = artifacts.require('Deployer');
 const LibDeployer1 = artifacts.require('LibDeployer1');
 const LibDeployer2 = artifacts.require('LibDeployer2');
 const LibDeployer3 = artifacts.require('LibDeployer3');
+const LibDeployer4 = artifacts.require('LibDeployer4');
 
 function chunks(array, size = 100) {
   const result = [];
@@ -15,9 +16,11 @@ module.exports = async (deployer, network, [account]) => {
   await deployer.deploy(LibDeployer1);
   await deployer.deploy(LibDeployer2);
   await deployer.deploy(LibDeployer3);
+  await deployer.deploy(LibDeployer4);
   deployer.link(LibDeployer1, Deployer);
   deployer.link(LibDeployer2, Deployer);
   deployer.link(LibDeployer3, Deployer);
+  deployer.link(LibDeployer4, Deployer);
   const contract = await deployer.deploy(Deployer);
 
   const listGROOT = require('./listGROOT.json');

@@ -4,6 +4,7 @@ pragma solidity ^0.6.0;
 import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 import { GDeflationaryToken } from "./GDeflationaryToken.sol";
+import { GRewardCompoundingStrategyToken } from "./GRewardCompoundingStrategyToken.sol";
 
 import { $ } from "./network/$.sol";
 
@@ -27,6 +28,14 @@ contract SAFE is GDeflationaryToken
 {
 	constructor (uint256 _totalSupply)
 		GDeflationaryToken("rAAVE Debt Token", "SAFE", 18, _totalSupply) public
+	{
+	}
+}
+
+contract stkgROOT_BNB is GRewardCompoundingStrategyToken
+{
+	constructor (address _masterChef, uint256 _pid)
+		GRewardCompoundingStrategyToken("stake gROOT/BNB", "stkgROOT/BNB", 18, _masterChef, _pid) public
 	{
 	}
 }

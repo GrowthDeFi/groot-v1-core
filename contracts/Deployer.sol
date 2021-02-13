@@ -8,7 +8,8 @@ import { GTokenRegistry } from "./GTokenRegistry.sol";
 import { GNativeBridge } from "./GNativeBridge.sol";
 import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
-import { gROOT, stkgROOT, SAFE } from "./GTokens.sol";
+import { GRewardCompoundingStrategyToken } from "./GRewardCompoundingStrategyToken.sol";
+import { gROOT, stkgROOT, SAFE, stkgROOT_BNB } from "./GTokens.sol";
 import { MasterChef } from "./MasterChef.sol";
 
 import { Factory, Pair } from "./interop/PancakeSwap.sol";
@@ -48,6 +49,7 @@ contract Deployer is Ownable
 	address public stkgROOT;
 	address public masterChef;
 	address public gROOT_WBNB;
+	address public stkgROOT_BNB;
 
 	bool public deployed = false;
 	bool public airdropped = false;
@@ -103,12 +105,16 @@ contract Deployer is Ownable
 		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
 		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
 
-		// adds liquidity to LPs and stake LP shares on MasterChef
+		// adds liquidity to LPs
 		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
 		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
 		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
-		Transfers._approveFunds(gROOT_WBNB, masterChef, _lpshares);
-		MasterChef(masterChef).deposit(1, _lpshares); // TODO as is LP shares are lost forever here because Deployer is the owner
+
+		// create strategy contract and stake LP shares
+		stkgROOT_BNB = LibDeployer4.publishSTKGROOTBNB(masterChef, 1);
+		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
+		GRewardCompoundingStrategyToken(stkgROOT_BNB).bootstrap();
+		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares - 1);
 
 		// transfer treasury and farming funds to the treasury
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
@@ -203,5 +209,13 @@ library LibDeployer3
 	function publishMasterChef(address _rewardToken, address _stkgROOT) public returns (address _address)
 	{
 		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_stkgROOT), _rewardToken, 0, block.number));
+	}
+}
+
+library LibDeployer4
+{
+	function publishSTKGROOTBNB(address _masterChef, uint256 _pid) public returns (address _address)
+	{
+		return address(new stkgROOT_BNB(_masterChef, _pid));
 	}
 }
