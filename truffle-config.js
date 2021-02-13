@@ -17,7 +17,7 @@ module.exports = {
       network_id: 56,
       networkCheckTimeout: 10000, // fixes truffle bug
       provider: () => new HDWalletProvider(privateKey, 'wss://bsc-dataseed.binance.org/'),
-      skipDryRun: true,
+      skipDryRun: false,
     },
     chapel: {
       network_id: 97,
