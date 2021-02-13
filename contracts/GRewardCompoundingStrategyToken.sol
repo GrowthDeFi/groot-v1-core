@@ -21,9 +21,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 	uint256 immutable pid;
 
 	address public immutable /*override*/ reserveToken;
-/*
-	address public immutable override rewardsToken;
-*/
+	address public immutable /*override*/ rewardToken;
+
 	address public treasury;
 
 	uint256 public /*override*/ performanceFee = DEFAULT_PERFORMANCE_FEE;
@@ -31,18 +30,18 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 	uint256 lastTotalSupply = 1;
 	uint256 lastTotalReserve = 1;
 
-	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _masterChef, uint256 _pid/*, address _rewardsToken*/)
+	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _masterChef, uint256 _pid)
 		BEP20(_name, _symbol) public
 	{
 		address _treasury = msg.sender;
-		(IBEP20 _lpToken,,,) = MasterChef(_masterChef).poolInfo(_pid);
 		require(_decimals == 18, "unsupported decimals");
 		require(_pid >= 1);
-		// assert(_reserveToken != _rewardsToken);
+		(IBEP20 _reserveToken,,,) = MasterChef(_masterChef).poolInfo(_pid);
+		IBEP20 _rewardToken = MasterChef(_masterChef).cake();
 		masterChef = _masterChef;
 		pid = _pid;
-		reserveToken = address(_lpToken);
-		// rewardsToken = _rewardsToken;
+		reserveToken = address(_reserveToken);
+		rewardToken = address(_rewardToken);
 		treasury = _treasury;
 	}
 
@@ -59,9 +58,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 
 	function totalReserve() public view /*override*/ returns (uint256 _totalReserve)
 	{
-		uint256 _balance = Transfers._getBalance(reserveToken);
-		(uint256 _staked,) = MasterChef(masterChef).userInfo(pid, address(this));
-		return _balance.add(_staked);
+		(_totalReserve,) = MasterChef(masterChef).userInfo(pid, address(this));
+		return _totalReserve;
 	}
 
 	function calcSharesFromCost(uint256 _cost) public view /*override*/ returns (uint256 _shares)
@@ -84,6 +82,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		address _from = msg.sender;
 		uint256 _shares = calcSharesFromCost(_cost);
 		Transfers._pullFunds(reserveToken, _from, _cost);
+		Transfers._approveFunds(reserveToken, masterChef, _cost);
+		MasterChef(masterChef).deposit(pid, _cost);
 		_mint(_from, _shares);
 	}
 
@@ -91,6 +91,7 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 	{
 		address _from = msg.sender;
 		uint256 _cost = calcCostFromShares(_shares);
+		MasterChef(masterChef).withdraw(pid, _cost);
 		Transfers._pushFunds(reserveToken, _from, _cost);
 		_burn(_from, _shares);
 	}
@@ -108,8 +109,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		lastUnlockedReward = 0;
 		assert(lastLockedReward.add(lastUnlockedReward) == Transfers._getBalance(rewardsToken));
 	}
-
-	function gulpFees() external override nonReentrant
+*/
+	function gulpFees() external /*override*/ nonReentrant
 	{
 		uint256 _feeShares = _calcFees();
 		if (_feeShares > 0) {
@@ -118,7 +119,7 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 			_mint(treasury, _feeShares);
 		}
 	}
-*/
+
 	function setTreasury(address _newTreasury) external /*override*/ onlyOwner nonReentrant
 	{
 		require(_newTreasury != address(0), "invalid address");
