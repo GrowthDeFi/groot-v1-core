@@ -27,7 +27,7 @@ module.exports = {
     },
     development: {
       network_id: '*',
-      gas: 10000000,
+      gas: 30000000,
       host: 'localhost',
       port: 8545,
       skipDryRun: true,
