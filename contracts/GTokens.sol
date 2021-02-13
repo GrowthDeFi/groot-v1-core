@@ -34,8 +34,8 @@ contract SAFE is GDeflationaryToken
 
 contract stkgROOT_BNB is GRewardCompoundingStrategyToken
 {
-	constructor (address _masterChef, uint256 _pid)
-		GRewardCompoundingStrategyToken("stake gROOT/BNB", "stkgROOT/BNB", 18, _masterChef, _pid) public
+	constructor (address _masterChef, uint256 _pid, address _gROOT)
+		GRewardCompoundingStrategyToken("stake gROOT/BNB", "stkgROOT/BNB", 18, _masterChef, _pid, _gROOT) public
 	{
 	}
 }

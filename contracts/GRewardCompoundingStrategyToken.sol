@@ -6,9 +6,13 @@ import { BEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20
 import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
 import { ReentrancyGuard } from "@pancakeswap/pancake-swap-lib/contracts/utils/ReentrancyGuard.sol";
 
+import { GExchange } from "./GExchange.sol";
 import { MasterChef } from "./MasterChef.sol"; 
 
 import { Transfers } from "./modules/Transfers.sol";
+import { PancakeSwapLiquidityPoolAbstraction } from "./modules/PancakeSwapLiquidityPoolAbstraction.sol";
+
+import { Pair } from "./interop/PancakeSwap.sol";
 
 contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 {
@@ -21,8 +25,10 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 	uint256 immutable pid;
 
 	address public immutable /*override*/ reserveToken;
+	address public immutable /*override*/ routingToken;
 	address public immutable /*override*/ rewardToken;
 
+	address public exchange;
 	address public treasury;
 
 	uint256 public /*override*/ performanceFee = DEFAULT_PERFORMANCE_FEE;
@@ -30,18 +36,21 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 	uint256 lastTotalSupply = 1;
 	uint256 lastTotalReserve = 1;
 
-	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _masterChef, uint256 _pid)
+	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _masterChef, uint256 _pid, address _routingToken)
 		BEP20(_name, _symbol) public
 	{
 		address _treasury = msg.sender;
+		(IBEP20 _lpToken,,,) = MasterChef(_masterChef).poolInfo(_pid);
+		address _reserveToken = address(_lpToken);
+		address _rewardToken = address(MasterChef(_masterChef).cake());
 		require(_decimals == 18, "unsupported decimals");
 		require(_pid >= 1);
-		(IBEP20 _reserveToken,,,) = MasterChef(_masterChef).poolInfo(_pid);
-		IBEP20 _rewardToken = MasterChef(_masterChef).cake();
+		require(_routingToken == Pair(_reserveToken).token0() || _routingToken == Pair(_reserveToken).token1(), "invalid token");
 		masterChef = _masterChef;
 		pid = _pid;
-		reserveToken = address(_reserveToken);
-		rewardToken = address(_rewardToken);
+		reserveToken = _reserveToken;
+		routingToken = _routingToken;
+		rewardToken = _rewardToken;
 		treasury = _treasury;
 	}
 
@@ -72,6 +81,17 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		return _shares.mul(totalReserve()).div(totalSupply());
 	}
 
+	function estimatePendingRewards() external view /*override*/ returns (uint256 _rewardsCost)
+	{
+		require(exchange != address(0), "exchange not set");
+		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
+		uint256 _routingAmount = _rewardAmount;
+		if (routingToken != rewardToken) {
+			_routingAmount = GExchange(exchange).calcConversionFromInput(rewardToken, routingToken, _rewardAmount);
+		}
+		return PancakeSwapLiquidityPoolAbstraction._estimateJoinPool(reserveToken, routingToken, _routingAmount);
+	}
+
 	function pendingFees() external view /*override*/ returns (uint256 _feeShares)
 	{
 		return _calcFees();
@@ -95,21 +115,21 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		Transfers._pushFunds(reserveToken, _from, _cost);
 		_burn(_from, _shares);
 	}
-/*
-	function gulpRewards(uint256 _minCost) external override nonReentrant
+
+	function gulpRewards(uint256 _minRewardCost) external /*override*/ nonReentrant
 	{
-		(lastContractBlock, lastLockedReward, lastUnlockedReward) = _calcCurrentRewards();
-		uint256 _balanceReward = Transfers._getBalance(rewardsToken);
-		uint256 _totalReward = lastLockedReward.add(lastUnlockedReward);
-		if (_balanceReward > _totalReward) {
-			uint256 _newLockedReward = _balanceReward.sub(_totalReward);
-			lastLockedReward = lastLockedReward.add(_newLockedReward);
+		require(exchange != address(0), "exchange not set");
+		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
+		uint256 _routingAmount = _rewardAmount;
+		if (routingToken != rewardToken) {
+			_routingAmount = GExchange(exchange).convertFundsFromInput(rewardToken, routingToken, _rewardAmount, 0);
 		}
-		UniswapV2LiquidityPoolAbstraction._joinPool(reserveToken, rewardsToken, lastUnlockedReward, _minCost);
-		lastUnlockedReward = 0;
-		assert(lastLockedReward.add(lastUnlockedReward) == Transfers._getBalance(rewardsToken));
+		uint256 _rewardCost = PancakeSwapLiquidityPoolAbstraction._joinPool(reserveToken, routingToken, _routingAmount);
+	        require(_rewardCost >= _minRewardCost, "high slippage");
+		Transfers._approveFunds(reserveToken, masterChef, _rewardCost);
+		MasterChef(masterChef).deposit(pid, _rewardCost);
 	}
-*/
+
 	function gulpFees() external /*override*/ nonReentrant
 	{
 		uint256 _feeShares = _calcFees();
@@ -120,20 +140,27 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		}
 	}
 
+	function setExchange(address _newExchange) external /*override*/ onlyOwner nonReentrant
+	{
+		address _oldExchange = exchange;
+		exchange = _newExchange;
+		emit ChangeExchange(_oldExchange, _newExchange);
+	}
+
 	function setTreasury(address _newTreasury) external /*override*/ onlyOwner nonReentrant
 	{
 		require(_newTreasury != address(0), "invalid address");
-		// address _oldTreasury = treasury;
+		address _oldTreasury = treasury;
 		treasury = _newTreasury;
-		// emit ChangeTreasury(_oldTreasury, _newTreasury);
+		emit ChangeTreasury(_oldTreasury, _newTreasury);
 	}
 
 	function setPerformanceFee(uint256 _newPerformanceFee) external /*override*/ onlyOwner nonReentrant
 	{
 		require(_newPerformanceFee <= MAXIMUM_PERFORMANCE_FEE, "invalid rate");
-		// uint256 _oldPerformanceFee = performanceFee;
+		uint256 _oldPerformanceFee = performanceFee;
 		performanceFee = _newPerformanceFee;
-		// emit ChangePerformanceFee(_oldPerformanceFee, _newPerformanceFee);
+		emit ChangePerformanceFee(_oldPerformanceFee, _newPerformanceFee);
 	}
 
 	function _calcFees() internal view returns (uint256 _feeShares)
@@ -157,4 +184,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 
 		return 0;
 	}
+
+	event ChangeExchange(address _oldExchange, address _newExchange);
+	event ChangeTreasury(address _oldTreasury, address _newTreasury);
+	event ChangePerformanceFee(uint256 _oldPerformanceFee, uint256 _newPerformanceFee);
 }

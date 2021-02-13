@@ -111,7 +111,7 @@ contract Deployer is Ownable
 		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
 
 		// create strategy contract and stake LP shares
-		stkgROOT_BNB = LibDeployer4.publishSTKGROOTBNB(masterChef, 1);
+		stkgROOT_BNB = LibDeployer4.publishSTKGROOTBNB(masterChef, 1, gROOT);
 		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).bootstrap();
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares - 1);
@@ -133,8 +133,9 @@ contract Deployer is Ownable
 		Ownable(stkgROOT).transferOwnership(masterChef);
 
 		Ownable(registry).transferOwnership(GROOT_TREASURY);
-		Ownable(masterChef).transferOwnership(GROOT_TREASURY);
 		Ownable(SAFE).transferOwnership(GROOT_TREASURY);
+		Ownable(masterChef).transferOwnership(GROOT_TREASURY);
+		Ownable(stkgROOT_BNB).transferOwnership(GROOT_TREASURY);
 
 		// wrap up the deployment
 		deployed = true;
@@ -214,8 +215,8 @@ library LibDeployer3
 
 library LibDeployer4
 {
-	function publishSTKGROOTBNB(address _masterChef, uint256 _pid) public returns (address _address)
+	function publishSTKGROOTBNB(address _masterChef, uint256 _pid, address _routingToken) public returns (address _address)
 	{
-		return address(new stkgROOT_BNB(_masterChef, _pid));
+		return address(new stkgROOT_BNB(_masterChef, _pid, _routingToken));
 	}
 }
