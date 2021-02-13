@@ -62,6 +62,8 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		uint256 _totalReserve = totalReserve();
 		require(_totalSupply == 0 && _totalReserve == 0, "illegal state");
 		Transfers._pullFunds(reserveToken, _from, 1);
+		Transfers._approveFunds(reserveToken, masterChef, 1);
+		MasterChef(masterChef).deposit(pid, 1);
 		_mint(address(this), 1);
 	}
 
