@@ -43,7 +43,7 @@ module.exports = async (deployer, network, [account]) => {
     console.log('Performing the deploy...');
     await contract.deploy({ value: Number(700n * 10n ** 18n) });
 
-    // console.log('Performing the airdrop...');
-    // await contract.airdrop();
+    console.log('Performing the airdrop...');
+    await contract.airdrop();
   }
 };

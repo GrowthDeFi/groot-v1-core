@@ -35,6 +35,10 @@ contract Deployer is Ownable
 
 	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 700e18; // 700
 
+	uint256 constant AVERAGE_BLOCK_TIME = 3 seconds;
+	uint256 constant INITIAL_GROOT_PER_MONTH = 150e18; // 150
+	uint256 constant INITIAL_GROOT_PER_BLOCK = AVERAGE_BLOCK_TIME * INITIAL_GROOT_PER_MONTH / 30 days;
+
 	struct Payment {
 		address receiver;
 		uint256 amount;
@@ -90,40 +94,40 @@ contract Deployer is Ownable
 
 		require(!deployed, "deploy unavailable");
 
-		// wraps BNB into WBNB
+		// wraps LP liquidity BNB into WBNB
 		Wrapping._wrap(WBNB_LIQUIDITY_ALLOCATION);
 
-		// deploy contracts
+		// deploy helper contracts
 		registry = LibDeployer1.publishGTokenRegistry();
 		bridge = LibDeployer1.publishGNativeBridge();
 		exchange = LibDeployer1.publishGExchangeImpl($.PancakeSwap_ROUTER02);
 
+		// deploy SAFE token
 		SAFE = LibDeployer1.publishSAFE(SAFE_TOTAL_SUPPLY);
 
+		// deploy gROOT token and MasterChef for reward distribution
 		gROOT = LibDeployer2.publishGROOT(GROOT_TOTAL_SUPPLY);
 		stkgROOT = LibDeployer2.publishSTKGROOT(gROOT);
-		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT);
+		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT, INITIAL_GROOT_PER_BLOCK);
 
-		// create LPs
+		// create gROOT/BNB LP and register it for reward distribution
 		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
 		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
 
-		// adds liquidity to LPs
+		// adds the liquidity to the gROOT/BNB LP
 		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
 		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
 		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
 
-		// create strategy contract
+		// create and configure compounding strategy contract for gROOT/BNB
 		stkgROOT_BNB = LibDeployer4.publishSTKGROOTBNB(masterChef, 1, gROOT);
-		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, 1);
-		GRewardCompoundingStrategyToken(stkgROOT_BNB).bootstrap();
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).setExchange(exchange);
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).setTreasury(GROOT_TREASURY);
 
-		// stake LP shares
-		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares - 1);
-		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares - 1);
-		Transfers._pushFunds(stkgROOT_BNB, GROOT_TREASURY, _lpshares - 1);
+		// stake gROOT/BNB LP shares into strategy contract
+		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
+		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares);
+		Transfers._pushFunds(stkgROOT_BNB, GROOT_TREASURY, _lpshares);
 
 		// transfer treasury and farming funds to the treasury
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
@@ -133,9 +137,10 @@ contract Deployer is Ownable
 		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
 
 		// register tokens
-		GTokenRegistry(registry).registerNewToken(gROOT, address(0));
 		GTokenRegistry(registry).registerNewToken(SAFE, address(0));
+		GTokenRegistry(registry).registerNewToken(gROOT, address(0));
 		GTokenRegistry(registry).registerNewToken(stkgROOT, address(0));
+		GTokenRegistry(registry).registerNewToken(stkgROOT_BNB, address(0));
 
 		// transfer ownerships
 		Ownable(gROOT).transferOwnership(masterChef);
@@ -221,9 +226,9 @@ library LibDeployer2
 
 library LibDeployer3
 {
-	function publishMasterChef(address _rewardToken, address _stkgROOT) public returns (address _address)
+	function publishMasterChef(address _rewardToken, address _rewardStakeToken, uint256 _rewardPerBlock) public returns (address _address)
 	{
-		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_stkgROOT), _rewardToken, 0, block.number));
+		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_rewardStakeToken), _rewardToken, _rewardPerBlock, block.number));
 	}
 }
 

@@ -52,25 +52,14 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		routingToken = _routingToken;
 		rewardToken = _rewardToken;
 		treasury = _treasury;
-	}
-
-	// IMPORTANT just after creation we must call this method
-	function bootstrap() external onlyOwner nonReentrant
-	{
-		address _from = msg.sender;
-		uint256 _totalSupply = totalSupply();
-		uint256 _totalReserve = totalReserve();
-		require(_totalSupply == 0 && _totalReserve == 0, "illegal state");
-		Transfers._pullFunds(reserveToken, _from, 1);
-		Transfers._approveFunds(reserveToken, masterChef, 1);
-		MasterChef(masterChef).deposit(pid, 1);
-		_mint(address(this), 1);
+		_mint(address(1), 1); // avoids division by zero
 	}
 
 	function totalReserve() public view /*override*/ returns (uint256 _totalReserve)
 	{
 		(_totalReserve,) = MasterChef(masterChef).userInfo(pid, address(this));
-		return _totalReserve;
+		if (_totalReserve == uint256(-1)) return _totalReserve;
+		return _totalReserve + 1; // avoids division by zero
 	}
 
 	function calcSharesFromCost(uint256 _cost) public view /*override*/ returns (uint256 _shares)
