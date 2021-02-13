@@ -6,6 +6,7 @@ import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP
 
 import { GTokenRegistry } from "./GTokenRegistry.sol";
 import { GNativeBridge } from "./GNativeBridge.sol";
+import { GExchangeImpl } from "./GExchangeImpl.sol";
 import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 import { GRewardCompoundingStrategyToken } from "./GRewardCompoundingStrategyToken.sol";
@@ -44,6 +45,7 @@ contract Deployer is Ownable
 
 	address public registry;
 	address public bridge;
+	address public exchange;
 	address public SAFE;
 	address public gROOT;
 	address public stkgROOT;
@@ -94,6 +96,7 @@ contract Deployer is Ownable
 		// deploy contracts
 		registry = LibDeployer1.publishGTokenRegistry();
 		bridge = LibDeployer1.publishGNativeBridge();
+		exchange = LibDeployer1.publishGExchangeImpl($.PancakeSwap_ROUTER02);
 
 		SAFE = LibDeployer1.publishSAFE(SAFE_TOTAL_SUPPLY);
 
@@ -110,11 +113,17 @@ contract Deployer is Ownable
 		Transfers._pushFunds($.WBNB, gROOT_WBNB, WBNB_LIQUIDITY_ALLOCATION);
 		uint256 _lpshares = Pair(gROOT_WBNB).mint(address(this));
 
-		// create strategy contract and stake LP shares
+		// create strategy contract
 		stkgROOT_BNB = LibDeployer4.publishSTKGROOTBNB(masterChef, 1, gROOT);
-		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
+		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, 1);
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).bootstrap();
+		GRewardCompoundingStrategyToken(stkgROOT_BNB).setExchange(exchange);
+		GRewardCompoundingStrategyToken(stkgROOT_BNB).setTreasury(GROOT_TREASURY);
+
+		// stake LP shares
+		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares - 1);
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares - 1);
+		Transfers._pushFunds(stkgROOT_BNB, GROOT_TREASURY, _lpshares - 1);
 
 		// transfer treasury and farming funds to the treasury
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
@@ -184,6 +193,11 @@ library LibDeployer1
 	function publishGNativeBridge() public returns (address _address)
 	{
 		return address(new GNativeBridge());
+	}
+
+	function publishGExchangeImpl(address _router) public returns (address _address)
+	{
+		return address(new GExchangeImpl(_router));
 	}
 
 	function publishSAFE(uint256 _totalSupply) public returns (address _address)

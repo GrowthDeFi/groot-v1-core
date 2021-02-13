@@ -8,7 +8,6 @@ import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP
  */
 interface Factory
 {
-	function getPair(address _tokenA, address _tokenB) external view returns (address _pair);
 	function createPair(address _tokenA, address _tokenB) external returns (address _pair);
 }
 
@@ -20,21 +19,22 @@ interface Pair is PoolToken
 {
 	function token0() external view returns (address _token0);
 	function token1() external view returns (address _token1);
-	function price0CumulativeLast() external view returns (uint256 _price0CumulativeLast);
-	function price1CumulativeLast() external view returns (uint256 _price1CumulativeLast);
 	function getReserves() external view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast);
+
 	function mint(address _to) external returns (uint256 _liquidity);
-	function sync() external;
 }
 
 interface Router01
 {
 	function WETH() external pure returns (address _token);
+	function getAmountOut(uint256 _amountIn, uint256 _reserveIn, uint256 _reserveOut) external pure returns (uint256 _amountOut);
+	function getAmountsOut(uint256 _amountIn, address[] calldata _path) external view returns (uint[] memory _amounts);
+	function getAmountsIn(uint256 _amountOut, address[] calldata _path) external view returns (uint[] memory _amounts);
+
 	function addLiquidity(address _tokenA, address _tokenB, uint256 _amountADesired, uint256 _amountBDesired, uint256 _amountAMin, uint256 _amountBMin, address _to, uint256 _deadline) external returns (uint256 _amountA, uint256 _amountB, uint256 _liquidity);
 	function removeLiquidity(address _tokenA, address _tokenB, uint256 _liquidity, uint256 _amountAMin, uint256 _amountBMin, address _to, uint256 _deadline) external returns (uint256 _amountA, uint256 _amountB);
 	function swapExactTokensForTokens(uint256 _amountIn, uint256 _amountOutMin, address[] calldata _path, address _to, uint256 _deadline) external returns (uint256[] memory _amounts);
-	function swapETHForExactTokens(uint256 _amountOut, address[] calldata _path, address _to, uint256 _deadline) external payable returns (uint256[] memory _amounts);
-	function getAmountOut(uint256 _amountIn, uint256 _reserveIn, uint256 _reserveOut) external pure returns (uint256 _amountOut);
+	function swapTokensForExactTokens(uint256 _amountOut, uint256 _amountInMax, address[] calldata _path, address _to, uint256 _deadline) external returns (uint256[] memory _amounts);
 }
 
 interface Router02 is Router01
