@@ -2,13 +2,14 @@
 pragma solidity 0.6.12;
 
 import { BEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/BEP20.sol";
+import { ReentrancyGuard } from "@pancakeswap/pancake-swap-lib/contracts/utils/ReentrancyGuard.sol";
 
 import { GRewardToken } from "./GRewardToken.sol";
 
 import { Math } from "./modules/Math.sol";
 import { Transfers } from "./modules/Transfers.sol";
 
-contract GRewardStakeToken is BEP20
+contract GRewardStakeToken is BEP20, ReentrancyGuard
 {
 	address public immutable rewardToken;
 
@@ -19,17 +20,17 @@ contract GRewardStakeToken is BEP20
 		rewardToken = _rewardToken;
 	}
 
-	function mint(address _to, uint256 _amount) public onlyOwner
+	function mint(address _to, uint256 _amount) external onlyOwner nonReentrant
 	{
 		_mint(_to, _amount);
 	}
 
-	function burn(address _from ,uint256 _amount) public onlyOwner
+	function burn(address _from ,uint256 _amount) external onlyOwner nonReentrant
 	{
 		_burn(_from, _amount);
 	}
 
-	function safeRewardTransfer(address _to, uint256 _amount) public onlyOwner
+	function safeRewardTransfer(address _to, uint256 _amount) external onlyOwner nonReentrant
 	{
 		uint256 _balance = Transfers._getBalance(rewardToken);
 		Transfers._pushFunds(rewardToken, _to, Math._min(_balance, _amount));
