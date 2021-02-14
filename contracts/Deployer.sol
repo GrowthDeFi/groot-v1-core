@@ -5,7 +5,6 @@ import { Ownable } from "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.
 import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
 
 import { GTokenRegistry } from "./GTokenRegistry.sol";
-import { GNativeBridge } from "./GNativeBridge.sol";
 import { GExchangeImpl } from "./GExchangeImpl.sol";
 import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
@@ -49,7 +48,6 @@ contract Deployer is Ownable
 	Payment[] public paymentsSAFE;
 
 	address public registry;
-	address public bridge;
 	address public exchange;
 	address public SAFE;
 	address public gROOT;
@@ -100,7 +98,6 @@ contract Deployer is Ownable
 
 		// deploy helper contracts
 		registry = LibDeployer1.publishGTokenRegistry();
-		bridge = LibDeployer1.publishGNativeBridge();
 		exchange = LibDeployer1.publishGExchangeImpl($.PancakeSwap_ROUTER02);
 
 		// deploy SAFE token
@@ -160,6 +157,7 @@ contract Deployer is Ownable
 
 	function airdrop() external onlyOwner
 	{
+		require(deployed, "airdrop unavailable");
 		require(!airdropped, "airdrop unavailable");
 
 		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
@@ -195,11 +193,6 @@ library LibDeployer1
 	function publishGTokenRegistry() public returns (address _address)
 	{
 		return address(new GTokenRegistry());
-	}
-
-	function publishGNativeBridge() public returns (address _address)
-	{
-		return address(new GNativeBridge());
 	}
 
 	function publishGExchangeImpl(address _router) public returns (address _address)

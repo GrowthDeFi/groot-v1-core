@@ -135,7 +135,6 @@ async function main() {
   const libNames = ['LibDeployer1', 'LibDeployer2', 'LibDeployer3', 'LibDeployer4'];
   const contractList = {
     'GTokenRegistry': { field: 'registry', args: '' },
-    'GNativeBridge': { field: 'bridge', args: '' },
 //    'GExchangeImpl': { field: 'exchange', args: 'router' },
 //    'SAFE': { field: 'SAFE', args: 'totalSupply' },
 //    'gROOT': { field: 'gROOT', args: 'totalSupply' },
