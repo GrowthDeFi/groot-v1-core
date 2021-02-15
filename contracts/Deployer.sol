@@ -21,7 +21,7 @@ import { $ } from "./network/$.sol";
 
 contract Deployer is Ownable
 {
-	address constant GROOT_TREASURY = 0xc4fac8ca576b9c8b971fa36916aee062d84b4901; // TODO update this address
+	address constant GROOT_TREASURY = 0xC4faC8CA576B9c8B971fA36916aEE062d84b4901; // TODO update this address
 
 	uint256 constant GROOT_TOTAL_SUPPLY = 20000e18; // 20,000
 	uint256 constant GROOT_TREASURY_ALLOCATION = 9750e18; // 9,750
