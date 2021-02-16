@@ -128,19 +128,40 @@ async function publishSourceCode(sourceCode, name, args = '', libNames = [], add
   return await verifyContract(name, address, sourceCode, args, libs, apiKey, testnet);
 }
 
+async function abiencode(web3, deployer, args) {
+  const types = [];
+  const values = [];
+  for (const arg of args) {
+    if (typeof arg == 'string') {
+      const value = await deployer.methods[arg]().call();
+      if (/^\d+$/.test(value)) {
+        types.push('uint256');
+        values.push(BigInt(value));
+      } else {
+        types.push('address');
+        values.push(value);
+      }
+    } else {
+      types.push('uint256');
+      values.push(arg);
+    }
+  }
+  return web3.eth.abi.encodeParameters(types, values).substr(2);
+};
+
 async function main() {
   const fileName = 'gROOT';
   const name = 'Deployer';
   const args = '';
   const libNames = ['LibDeployer1', 'LibDeployer2', 'LibDeployer3', 'LibDeployer4'];
   const contractList = {
-    'GTokenRegistry': { field: 'registry', args: '' },
-//    'GExchangeImpl': { field: 'exchange', args: 'router' },
-//    'SAFE': { field: 'SAFE', args: 'totalSupply' },
-//    'gROOT': { field: 'gROOT', args: 'totalSupply' },
-//    'stkgROOT': { field: 'stkgROOT', args: '_rewardToken' },
-//    'MasterChef': { field: 'masterChef', args: 'GRewardToken(_rewardToken), GRewardStakeToken(_rewardStakeToken), _rewardToken, _rewardPerBlock, block.number' },
-//    'stkgROOT_BNB': { field: 'stkgROOT_BNB', args: '_masterChef, _pid, _routingToken' },
+    'GTokenRegistry': { field: 'registry', args: [] },
+    'GExchangeImpl': { field: 'exchange', args: ['pancakeSwapRouter'] },
+    'SAFE': { field: 'SAFE', args: [168675n * 10n ** 18n] },
+    'gROOT': { field: 'gROOT', args: [20000n * 10n ** 18n] },
+    'stkgROOT': { field: 'stkgROOT', args: ['gROOT'] },
+    'MasterChef': { field: 'masterChef', args: ['gROOT', 'stkgROOT', 'gROOT', 173611111111111n, 'rewardStartBlock'] },
+    'stkgROOT_BNB': { field: 'stkgROOT_BNB', args: ['masterChef', 1n, 'gROOT'] },
   };
 
   const receipts = [];
@@ -157,8 +178,9 @@ async function main() {
   const deployer = instanceOf(web3, name, testnet);
   for (const contractName in contractList) {
     const { field, args } = contractList[contractName];
+    const encodedArgs = await abiencode(web3, deployer, args);
     const address = await deployer.methods[field]().call();
-    const receipt = await publishSourceCode(sourceCode, contractName, args, [], address);
+    const receipt = await publishSourceCode(sourceCode, contractName, encodedArgs, [], address);
     receipts.push(receipt);
   }
   console.log(receipts);

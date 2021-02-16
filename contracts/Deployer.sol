@@ -47,6 +47,8 @@ contract Deployer is Ownable
 	Payment[] public paymentsGROOT;
 	Payment[] public paymentsSAFE;
 
+	uint256 public rewardStartBlock;
+	address public pancakeSwapRouter;
 	address public registry;
 	address public exchange;
 	address public SAFE;
@@ -96,9 +98,13 @@ contract Deployer is Ownable
 		// wraps LP liquidity BNB into WBNB
 		Wrapping._wrap(WBNB_LIQUIDITY_ALLOCATION);
 
+		// initialize handy fields
+		rewardStartBlock = block.number;
+		pancakeSwapRouter = $.PancakeSwap_ROUTER02;
+
 		// deploy helper contracts
 		registry = LibDeployer1.publishGTokenRegistry();
-		exchange = LibDeployer1.publishGExchangeImpl($.PancakeSwap_ROUTER02);
+		exchange = LibDeployer1.publishGExchangeImpl(pancakeSwapRouter);
 
 		// deploy SAFE token
 		SAFE = LibDeployer1.publishSAFE(SAFE_TOTAL_SUPPLY);
@@ -106,7 +112,7 @@ contract Deployer is Ownable
 		// deploy gROOT token and MasterChef for reward distribution
 		gROOT = LibDeployer2.publishGROOT(GROOT_TOTAL_SUPPLY);
 		stkgROOT = LibDeployer2.publishSTKGROOT(gROOT);
-		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT, INITIAL_GROOT_PER_BLOCK);
+		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT, INITIAL_GROOT_PER_BLOCK, rewardStartBlock);
 		GRewardToken(gROOT).allocateReward(GROOT_INITIAL_FARMING_ALLOCATION);
 
 		// create gROOT/BNB LP and register it for reward distribution
@@ -221,9 +227,9 @@ library LibDeployer2
 
 library LibDeployer3
 {
-	function publishMasterChef(address _rewardToken, address _rewardStakeToken, uint256 _rewardPerBlock) public returns (address _address)
+	function publishMasterChef(address _rewardToken, address _rewardStakeToken, uint256 _rewardPerBlock, uint256 _rewardStartBlock) public returns (address _address)
 	{
-		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_rewardStakeToken), _rewardToken, _rewardPerBlock, block.number));
+		return address(new MasterChef(GRewardToken(_rewardToken), GRewardStakeToken(_rewardStakeToken), _rewardToken, _rewardPerBlock, _rewardStartBlock));
 	}
 }
 
