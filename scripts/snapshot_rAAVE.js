@@ -206,7 +206,7 @@ function processTxs() {
       }
     }
   }
-  const supplyGROOT = 2000n * 10n ** 6n;
+  const supplyGROOT = 1500n * 10n ** 6n;
   const output = [];
   let totalUnits = 0;
   for (const account in accountBalance) {

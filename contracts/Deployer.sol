@@ -21,23 +21,25 @@ import { $ } from "./network/$.sol";
 
 contract Deployer is Ownable
 {
-	address constant GROOT_TREASURY = 0xC4faC8CA576B9c8B971fA36916aEE062d84b4901; // TODO update this address
+	address constant GROOT_TREASURY = 0x2165fa4a32B9c228cD55713f77d2e977297D03e8;
 
 	uint256 constant GROOT_TOTAL_SUPPLY = 20000e18; // 20,000
-	uint256 constant GROOT_TREASURY_ALLOCATION = 9750e18; // 9,750
-	uint256 constant GROOT_LIQUIDITY_ALLOCATION = 250e18; // 250
-	uint256 constant GROOT_FARMING_ALLOCATION = 7999e18; // 7,999
-	uint256 constant GROOT_INITIAL_FARMING_ALLOCATION = 1e18; // 1
-	uint256 constant GROOT_AIRDROP_ALLOCATION = 2000e18; // 2,000
+	uint256 constant GROOT_TREASURY_ALLOCATION = 10420e18; // 10,420
+	uint256 constant GROOT_LIQUIDITY_ALLOCATION = 80e18; // 80
+	uint256 constant GROOT_FARMING_ALLOCATION = 8000e18; // 8,000
+	uint256 constant GROOT_INITIAL_FARMING_ALLOCATION = 0e18; // 0
+	uint256 constant GROOT_AIRDROP_ALLOCATION = 1500e18; // 1,500
 
 	uint256 constant SAFE_TOTAL_SUPPLY = 168675e18; // 168,675
 	uint256 constant SAFE_AIRDROP_ALLOCATION = 168675e18; // 168,675
 
-	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 700e18; // 700
+	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 350e18; // 350 ~ $100k
 
 	uint256 constant AVERAGE_BLOCK_TIME = 3 seconds;
-	uint256 constant INITIAL_GROOT_PER_MONTH = 150e18; // 150
+	uint256 constant INITIAL_GROOT_PER_MONTH = 0e18; // 0
 	uint256 constant INITIAL_GROOT_PER_BLOCK = AVERAGE_BLOCK_TIME * INITIAL_GROOT_PER_MONTH / 30 days;
+
+	uint256 constant STAKE_LP_SHARES = false;
 
 	struct Payment {
 		address receiver;
@@ -130,9 +132,13 @@ contract Deployer is Ownable
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).setTreasury(GROOT_TREASURY);
 
 		// stake gROOT/BNB LP shares into strategy contract
-		Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
-		GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares);
-		Transfers._pushFunds(stkgROOT_BNB, GROOT_TREASURY, _lpshares);
+		if (STAKE_LP_SHARES) {
+			Transfers._approveFunds(gROOT_WBNB, stkgROOT_BNB, _lpshares);
+			GRewardCompoundingStrategyToken(stkgROOT_BNB).deposit(_lpshares);
+			Transfers._pushFunds(stkgROOT_BNB, GROOT_TREASURY, _lpshares);
+		} else {
+			Transfers._pushFunds(gROOT_WBNB, GROOT_TREASURY, _lpshares);
+		}
 
 		// transfer treasury and farming funds to the treasury
 		Transfers._pushFunds(gROOT, GROOT_TREASURY, GROOT_TREASURY_ALLOCATION);
