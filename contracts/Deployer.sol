@@ -39,7 +39,7 @@ contract Deployer is Ownable
 	uint256 constant INITIAL_GROOT_PER_MONTH = 0e18; // 0
 	uint256 constant INITIAL_GROOT_PER_BLOCK = AVERAGE_BLOCK_TIME * INITIAL_GROOT_PER_MONTH / 30 days;
 
-	uint256 constant STAKE_LP_SHARES = false;
+	bool constant STAKE_LP_SHARES = false;
 
 	struct Payment {
 		address receiver;
