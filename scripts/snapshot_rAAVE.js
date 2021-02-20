@@ -146,7 +146,7 @@ const _rAAVE = '0x3371De12E8734c76F70479Dae3A9f3dC80CDCEaB';
 const contract = new web3.eth.Contract(rAAVE, _rAAVE);
 
 const fromBlock = 11797736;
-const toBlock = 'latest';
+const toBlock = 11894500;
 
 const transactions = {};
 
@@ -206,10 +206,28 @@ function processTxs() {
       }
     }
   }
+  for (const account in accountBalance) {
+    if ([
+      '0x3E7Ff81efBbAdf5FCA2810086b7f4C17a4F3682f', // DAO
+      '0x6e32d45075d893688CaC8fd5DfC4aA42531d29de', // rAAVE treasury
+      '0x40F58156e113A0BC94287F074320137cfc7589dD', // AAVE/rAAVE
+      '0xfb8e17b39fA9F2375202BC1ED549797606EC9316', // GRO/rAAVE
+      '0xE1D0C66031b529DCD0043438807825Eff7aAda44', // ETH/rAAVE
+    ].includes(account)) {
+      contractBalance -= accountBalance[account];
+    }
+  }
   const supplyGROOT = 1500n * 10n ** 6n;
   const output = [];
   let totalUnits = 0;
   for (const account in accountBalance) {
+    if ([
+      '0x3E7Ff81efBbAdf5FCA2810086b7f4C17a4F3682f', // DAO
+      '0x6e32d45075d893688CaC8fd5DfC4aA42531d29de', // rAAVE treasury
+      '0x40F58156e113A0BC94287F074320137cfc7589dD', // AAVE/rAAVE
+      '0xfb8e17b39fA9F2375202BC1ED549797606EC9316', // GRO/rAAVE
+      '0xE1D0C66031b529DCD0043438807825Eff7aAda44', // ETH/rAAVE
+    ].includes(account)) continue;
     const units = Number(accountBalance[account] * supplyGROOT / contractBalance);
     if (units > 0) {
       output.push([account, units]);
