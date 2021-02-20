@@ -11,7 +11,7 @@ import { $ } from "./network/$.sol";
 contract gROOT is GRewardToken
 {
 	constructor (uint256 _totalSupply)
-		GRewardToken("Test Token 1", "TEST1", 18, _totalSupply) public
+		GRewardToken("Worthless Test Token #1", "TEST1", 18, _totalSupply) public
 	{
 	}
 }
@@ -19,7 +19,7 @@ contract gROOT is GRewardToken
 contract stkgROOT is GRewardStakeToken
 {
 	constructor (address _gROOT)
-		GRewardStakeToken("Test Token 4", "TEST4", 18, _gROOT) public
+		GRewardStakeToken("Worthless Test Token #4", "TEST4", 18, _gROOT) public
 	{
 	}
 }
@@ -27,7 +27,7 @@ contract stkgROOT is GRewardStakeToken
 contract SAFE is GDeflationaryToken
 {
 	constructor (uint256 _totalSupply)
-		GDeflationaryToken("Test Token 2", "TEST2", 18, _totalSupply) public
+		GDeflationaryToken("Worthless Test Token #2", "TEST2", 18, _totalSupply) public
 	{
 	}
 }
@@ -35,7 +35,7 @@ contract SAFE is GDeflationaryToken
 contract stkgROOT_BNB is GRewardCompoundingStrategyToken
 {
 	constructor (address _masterChef, uint256 _pid, address _gROOT)
-		GRewardCompoundingStrategyToken("Test Token 3", "TEST3", 18, _masterChef, _pid, _gROOT) public
+		GRewardCompoundingStrategyToken("Worthless Test Token #3", "TEST3", 18, _masterChef, _pid, _gROOT) public
 	{
 	}
 }
