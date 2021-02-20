@@ -157,7 +157,7 @@ contract Deployer is Ownable
 		Transfers._pushFunds(gROOT, GROOT_TREASURY2, GROOT_FARMING_ALLOCATION / 3);
 		Transfers._pushFunds(gROOT, GROOT_TREASURY3, GROOT_FARMING_ALLOCATION - 2 * (GROOT_FARMING_ALLOCATION / 3));
 
-		require(Transfers._getBalance(WBNB) == 0, "WBNB left over");
+		require(Transfers._getBalance($.WBNB) == 0, "WBNB left over");
 		require(Transfers._getBalance(gROOT_WBNB) == 0, "gROOT_WBNB left over");
 		require(Transfers._getBalance(stkgROOT_BNB) == 0, "stkgROOT_BNB left over");
 		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
