@@ -40,7 +40,7 @@ contract Deployer is Ownable
 	uint256 constant SAFE_TOTAL_SUPPLY = 168675e18; // 168,675
 	uint256 constant SAFE_AIRDROP_ALLOCATION = 168675e18; // 168,675
 
-	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 300e18; // 300
+	uint256 constant WBNB_LIQUIDITY_ALLOCATION = 1e16; // 0.01
 
 	uint256 constant AVERAGE_BLOCK_TIME = 3 seconds;
 	uint256 constant INITIAL_GROOT_PER_MONTH = 0e18; // 0
