@@ -113,6 +113,7 @@ contract GRewardCompoundingStrategyToken is BEP20, ReentrancyGuard
 		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
 		uint256 _routingAmount = _rewardAmount;
 		if (routingToken != rewardToken) {
+			Transfers._approveFunds(rewardToken, exchange, _rewardAmount);
 			_routingAmount = GExchange(exchange).convertFundsFromInput(rewardToken, routingToken, _rewardAmount, 0);
 		}
 		uint256 _rewardCost = PancakeSwapLiquidityPoolAbstraction._joinPool(reserveToken, routingToken, _routingAmount);
