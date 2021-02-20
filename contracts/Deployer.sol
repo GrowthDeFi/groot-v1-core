@@ -68,8 +68,7 @@ contract Deployer is Ownable
 	address public stkgROOT_BNB;
 
 	bool public deployed = false;
-	bool public airdropped1 = false;
-	bool public airdropped2 = false;
+	bool public airdropped = false;
 
 	constructor () public
 	{
@@ -184,11 +183,13 @@ contract Deployer is Ownable
 		emit DeployPerformed();
 	}
 
-	function airdrop1() external onlyOwner
+	function airdrop() external onlyOwner
 	{
-		require(deployed && !airdropped1, "airdrop unavailable");
+		require(deployed, "airdrop unavailable");
+		require(!airdropped, "airdrop unavailable");
 
 		require(Transfers._getBalance(gROOT) == GROOT_AIRDROP_ALLOCATION, "gROOT amount mismatch");
+		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
 
 		// airdrops gROOT
 		for (uint256 _i = 0; _i < paymentsGROOT.length; _i++) {
@@ -196,28 +197,18 @@ contract Deployer is Ownable
 			Transfers._pushFunds(gROOT, _payment.receiver, _payment.amount);
 		}
 
-		require(Transfers._getBalance(gROOT) == 0, "gROOT left over");
-
-		airdropped1 = true;
-	}
-
-	function airdrop2() external onlyOwner
-	{
-		require(airdropped1 && !airdropped2, "airdrop unavailable");
-
-		require(Transfers._getBalance(SAFE) == SAFE_AIRDROP_ALLOCATION, "SAFE amount mismatch");
-
 		// ardrops SAFE
 		for (uint256 _i = 0; _i < paymentsSAFE.length; _i++) {
 			Payment storage _payment = paymentsSAFE[_i];
 			Transfers._pushFunds(SAFE, _payment.receiver, _payment.amount);
 		}
 
+		require(Transfers._getBalance(gROOT) == 0, "gROOT left over");
 		require(Transfers._getBalance(SAFE) == 0, "SAFE left over");
 
 		renounceOwnership();
 
-		airdropped2 = true;
+		airdropped = true;
 		emit AirdropPerformed();
 	}
 
