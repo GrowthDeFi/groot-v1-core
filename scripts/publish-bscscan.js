@@ -160,7 +160,7 @@ async function main() {
     'SAFE': { field: 'SAFE', args: [168675n * 10n ** 18n] },
     'gROOT': { field: 'gROOT', args: [20000n * 10n ** 18n] },
     'stkgROOT': { field: 'stkgROOT', args: ['gROOT'] },
-    'MasterChef': { field: 'masterChef', args: ['gROOT', 'stkgROOT', 'gROOT', 173611111111111n, 'rewardStartBlock'] },
+    'MasterChef': { field: 'masterChef', args: ['gROOT', 'stkgROOT', 'gROOT', 0n, 'rewardStartBlock'] },
     'stkgROOT_BNB': { field: 'stkgROOT_BNB', args: ['masterChef', 1n, 'gROOT'] },
   };
 
