@@ -23,7 +23,7 @@ contract GRewardToken is Ownable, ERC20
 		_transfer(_from, _to, _amount);
 	}
 
-	function transferReward(address _to, uint256 _amount) external onlyOwner
+	function mint(address _to, uint256 _amount) external onlyOwner
 	{
 		address _from = address(this);
 		uint256 _balance = balanceOf(_from);

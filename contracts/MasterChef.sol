@@ -112,7 +112,7 @@ contract MasterChef is Ownable {
 
         totalAllocPoint = 1000;
 
-        holder = GRewardHolder(_cake);
+        holder = GRewardHolder(address(_cake));
     }
 
     function setHolder(GRewardHolder _holder) public onlyOwner {
@@ -232,8 +232,8 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 cakeReward = multiplier.mul(cakePerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        holder.transferReward(devaddr, cakeReward.div(10));
-        holder.transferReward(address(syrup), cakeReward);
+        holder.mint(devaddr, cakeReward.div(10));
+        holder.mint(address(syrup), cakeReward);
         pool.accCakePerShare = pool.accCakePerShare.add(cakeReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
     }

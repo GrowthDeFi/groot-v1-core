@@ -21,7 +21,7 @@ contract GRewardHolder is Ownable
 		Transfers._pullFunds(rewardToken, _from, _amount);
 	}
 
-	function transferReward(address _to, uint256 _amount) external onlyOwner
+	function mint(address _to, uint256 _amount) external onlyOwner
 	{
 		uint256 _balance = Transfers._getBalance(rewardToken);
 		Transfers._pushFunds(rewardToken, _to, Math._min(_balance, _amount));
