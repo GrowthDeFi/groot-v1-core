@@ -10,10 +10,9 @@ contract GRewardHolder is Ownable
 {
 	address public immutable rewardToken;
 
-	constructor (address _rewardToken, address _masterChef) public
+	constructor (address _rewardToken) public
 	{
 		rewardToken = _rewardToken;
-		transferOwnership(_masterChef);
 	}
 
 	function allocateReward(uint256 _amount) external
