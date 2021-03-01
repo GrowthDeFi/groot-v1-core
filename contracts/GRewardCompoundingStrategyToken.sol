@@ -25,14 +25,14 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 	address immutable masterChef;
 	uint256 immutable pid;
 
-	address public immutable /*override*/ reserveToken;
-	address public immutable /*override*/ routingToken;
-	address public immutable /*override*/ rewardToken;
+	address public immutable reserveToken;
+	address public immutable routingToken;
+	address public immutable rewardToken;
 
 	address public exchange;
 	address public treasury;
 
-	uint256 public /*override*/ performanceFee = DEFAULT_PERFORMANCE_FEE;
+	uint256 public performanceFee = DEFAULT_PERFORMANCE_FEE;
 
 	uint256 lastTotalSupply = 1;
 	uint256 lastTotalReserve = 1;
@@ -56,24 +56,24 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		_mint(address(1), 1); // avoids division by zero
 	}
 
-	function totalReserve() public view /*override*/ returns (uint256 _totalReserve)
+	function totalReserve() public view returns (uint256 _totalReserve)
 	{
 		(_totalReserve,) = MasterChef(masterChef).userInfo(pid, address(this));
 		if (_totalReserve == uint256(-1)) return _totalReserve;
 		return _totalReserve + 1; // avoids division by zero
 	}
 
-	function calcSharesFromCost(uint256 _cost) public view /*override*/ returns (uint256 _shares)
+	function calcSharesFromCost(uint256 _cost) public view returns (uint256 _shares)
 	{
 		return _cost.mul(totalSupply()).div(totalReserve());
 	}
 
-	function calcCostFromShares(uint256 _shares) public view /*override*/ returns (uint256 _cost)
+	function calcCostFromShares(uint256 _shares) public view returns (uint256 _cost)
 	{
 		return _shares.mul(totalReserve()).div(totalSupply());
 	}
 
-	function estimatePendingRewards() external view /*override*/ returns (uint256 _rewardsCost)
+	function estimatePendingRewards() external view returns (uint256 _rewardsCost)
 	{
 		require(exchange != address(0), "exchange not set");
 		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
@@ -84,12 +84,12 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		return PancakeSwapLiquidityPoolAbstraction._estimateJoinPool(reserveToken, routingToken, _routingAmount);
 	}
 
-	function pendingFees() external view /*override*/ returns (uint256 _feeShares)
+	function pendingFees() external view returns (uint256 _feeShares)
 	{
 		return _calcFees();
 	}
 
-	function deposit(uint256 _cost) external /*override*/ nonReentrant
+	function deposit(uint256 _cost) external nonReentrant
 	{
 		address _from = msg.sender;
 		uint256 _shares = calcSharesFromCost(_cost);
@@ -99,7 +99,7 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		_mint(_from, _shares);
 	}
 
-	function withdraw(uint256 _shares) external /*override*/ nonReentrant
+	function withdraw(uint256 _shares) external nonReentrant
 	{
 		address _from = msg.sender;
 		uint256 _cost = calcCostFromShares(_shares);
@@ -108,7 +108,7 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		_burn(_from, _shares);
 	}
 
-	function gulpRewards(uint256 _minRewardCost) external /*override*/ nonReentrant
+	function gulpRewards(uint256 _minRewardCost) external nonReentrant
 	{
 		require(exchange != address(0), "exchange not set");
 		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
@@ -123,7 +123,7 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		MasterChef(masterChef).deposit(pid, _rewardCost);
 	}
 
-	function gulpFees() external /*override*/ nonReentrant
+	function gulpFees() external nonReentrant
 	{
 		uint256 _feeShares = _calcFees();
 		if (_feeShares > 0) {
@@ -133,14 +133,14 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		}
 	}
 
-	function setExchange(address _newExchange) external /*override*/ onlyOwner nonReentrant
+	function setExchange(address _newExchange) external onlyOwner nonReentrant
 	{
 		address _oldExchange = exchange;
 		exchange = _newExchange;
 		emit ChangeExchange(_oldExchange, _newExchange);
 	}
 
-	function setTreasury(address _newTreasury) external /*override*/ onlyOwner nonReentrant
+	function setTreasury(address _newTreasury) external onlyOwner nonReentrant
 	{
 		require(_newTreasury != address(0), "invalid address");
 		address _oldTreasury = treasury;
@@ -148,7 +148,7 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 		emit ChangeTreasury(_oldTreasury, _newTreasury);
 	}
 
-	function setPerformanceFee(uint256 _newPerformanceFee) external /*override*/ onlyOwner nonReentrant
+	function setPerformanceFee(uint256 _newPerformanceFee) external onlyOwner nonReentrant
 	{
 		require(_newPerformanceFee <= MAXIMUM_PERFORMANCE_FEE, "invalid rate");
 		uint256 _oldPerformanceFee = performanceFee;
