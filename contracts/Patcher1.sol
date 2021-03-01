@@ -61,9 +61,9 @@ contract Patcher1 is Ownable
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).setExchange(_exchange);
 		GRewardCompoundingStrategyToken(stkgROOT_BNB).setTreasury(GROOT_DEFAULT_FEE_COLLECTOR);
 
-		// register tokens
-		GTokenRegistry(_registry).registerNewToken(stkgROOT, Deployer(_deployer).stkgROOT());
-		GTokenRegistry(_registry).registerNewToken(stkgROOT_BNB, Deployer(_deployer).stkgROOT_BNB());
+		// register tokens (needs to be performed manually)
+		// GTokenRegistry(_registry).registerNewToken(stkgROOT, Deployer(_deployer).stkgROOT());
+		// GTokenRegistry(_registry).registerNewToken(stkgROOT_BNB, Deployer(_deployer).stkgROOT_BNB());
 
 		// transfer ownerships
 		Ownable(holder).transferOwnership(masterChef);
