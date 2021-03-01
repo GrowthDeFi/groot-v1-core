@@ -41,7 +41,7 @@ contract Patcher1 is Ownable
 		require(!patched, "patch unavailable");
 
 		// initialize handy fields
-		address _registry = Deployer(_deployer).registry();
+		// address _registry = Deployer(_deployer).registry();
 		address _exchange = Deployer(_deployer).exchange();
 		address _gROOT = Deployer(_deployer).gROOT();
 		address _gROOT_WBNB = Deployer(_deployer).gROOT_WBNB();
