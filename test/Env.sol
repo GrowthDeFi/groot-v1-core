@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { SafeMath } from "@pancakeswap/pancake-swap-lib/contracts/math/SafeMath.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 
 import { Transfers } from "../contracts/modules/Transfers.sol";
 
