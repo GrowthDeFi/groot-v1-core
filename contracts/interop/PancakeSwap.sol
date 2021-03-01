@@ -8,6 +8,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
  */
 interface Factory
 {
+	function getPair(address _tokenA, address _tokenB) external view returns (address _pair);
+
 	function createPair(address _tokenA, address _tokenB) external returns (address _pair);
 }
 
