@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { Ownable } from "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 import { Math } from "./modules/Math.sol";
 import { Transfers } from "./modules/Transfers.sol";
