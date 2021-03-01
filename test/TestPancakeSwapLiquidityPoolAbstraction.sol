@@ -15,12 +15,12 @@ contract TestPancakeSwapLiquidityPoolAbstraction is Env
 {
 	function test01() external
 	{
-		_testPool($.WBNB, $.ETH, 1e8);
+		_testPool($.WBNB, $.ETH, 1e14);
 	}
 
 	function test02() external
 	{
-		_testPool($.ETH, $.WBNB, 1e8);
+		_testPool($.ETH, $.WBNB, 1e14);
 	}
 
 	function _testPool(address _source, address _target, uint256 _sourceAmount) private
