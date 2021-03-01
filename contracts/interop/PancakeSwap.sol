@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @dev Minimal set of declarations for Uniswap V2 interoperability.
@@ -11,7 +11,7 @@ interface Factory
 	function createPair(address _tokenA, address _tokenB) external returns (address _pair);
 }
 
-interface PoolToken is IBEP20
+interface PoolToken is IERC20
 {
 }
 

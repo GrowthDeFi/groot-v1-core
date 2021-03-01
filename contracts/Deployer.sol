@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.6.0;
 
-import { Ownable } from "@pancakeswap/pancake-swap-lib/contracts/access/Ownable.sol";
-import { IBEP20 } from "@pancakeswap/pancake-swap-lib/contracts/token/BEP20/IBEP20.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 import { GTokenRegistry } from "./GTokenRegistry.sol";
 import { GExchangeImpl } from "./GExchangeImpl.sol";
@@ -126,7 +126,7 @@ contract Deployer is Ownable
 
 		// create gROOT/BNB LP and register it for reward distribution
 		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);
-		MasterChef(masterChef).add(1000, IBEP20(gROOT_WBNB), false);
+		MasterChef(masterChef).add(1000, IERC20(gROOT_WBNB), false);
 
 		// adds the liquidity to the gROOT/BNB LP
 		Transfers._pushFunds(gROOT, gROOT_WBNB, GROOT_LIQUIDITY_ALLOCATION);
