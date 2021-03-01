@@ -24,7 +24,7 @@
     "deploy:chapel": "npm run set:chapel && truffle migrate --network chapel",
     "set:bscmain": "sed -i 's/NETWORK = Network.Chapel/NETWORK = Network.Bscmain/g' contracts/network/$.sol",
     "set:chapel": "sed -i 's/NETWORK = Network.Bscmain/NETWORK = Network.Chapel/g' contracts/network/$.sol",
-    "source": "truffle-flattener contracts/Deployer.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n\\n/' > gROOT.sol",
+    "source": "truffle-flattener contracts/*.sol | sed '/^.*SPDX-License-Identifier:.*$/d' | sed '1s/^/\\/\\/ SPDX-License-Identifier: GPL-3.0-only\\n\\n/' > gROOT.sol",
     "test": "truffle test",
     "test:bscmain": "npm run set:bscmain && truffle test",
     "test:chapel": "npm run set:chapel && truffle test",
