@@ -37,7 +37,7 @@ contract TestPancakeSwapLiquidityPoolAbstraction is Env
 		Assert.equal(_getBalance(_target), 0, "Target balance must be zero");
 
 		uint256 _estimatedShares = PancakeSwapLiquidityPoolAbstraction._estimateJoinPool(_pair, _source, _sourceAmount);
-		uint256 _shares = PancakeSwapLiquidityPoolAbstraction._joinPool(_pair, _source, _sourceAmount, 1);
+		uint256 _shares = PancakeSwapLiquidityPoolAbstraction._joinPool(_pair, _source, _sourceAmount);
 
 		Assert.isAtLeast(_shares, _estimatedShares.sub(10), "Shares received must be at least estimate minus 10 wei");
 		Assert.isAtMost(_shares, _estimatedShares.add(10), "Shares received must be at most estimate plus 10 wei");
@@ -49,7 +49,7 @@ contract TestPancakeSwapLiquidityPoolAbstraction is Env
 		_burnAll(_source);
 
 		uint256 _estimatedAmount = PancakeSwapLiquidityPoolAbstraction._estimateExitPool(_pair, _target, _shares);
-		uint256 _targetAmount = PancakeSwapLiquidityPoolAbstraction._exitPool(_pair, _target, _shares, 1);
+		uint256 _targetAmount = PancakeSwapLiquidityPoolAbstraction._exitPool(_pair, _target, _shares);
 		
 		Assert.equal(_targetAmount, _estimatedAmount, "Amount received must match estimate");
 
