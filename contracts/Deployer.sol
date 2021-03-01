@@ -122,7 +122,7 @@ contract Deployer is Ownable
 		gROOT = LibDeployer2.publishGROOT(GROOT_TOTAL_SUPPLY);
 		stkgROOT = LibDeployer2.publishSTKGROOT(gROOT);
 		masterChef = LibDeployer3.publishMasterChef(gROOT, stkgROOT, INITIAL_GROOT_PER_BLOCK, rewardStartBlock);
-		// GRewardToken(gROOT).allocateReward(GROOT_INITIAL_FARMING_ALLOCATION);
+		GRewardToken(gROOT).allocateReward(GROOT_INITIAL_FARMING_ALLOCATION);
 
 		// create gROOT/BNB LP and register it for reward distribution
 		gROOT_WBNB = Factory($.PancakeSwap_FACTORY).createPair(gROOT, $.WBNB);

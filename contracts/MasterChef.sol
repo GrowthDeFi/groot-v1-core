@@ -112,6 +112,7 @@ contract MasterChef is Ownable {
 
         totalAllocPoint = 1000;
 
+        holder = GRewardHolder(_cake);
     }
 
     function setHolder(GRewardHolder _holder) public onlyOwner {
