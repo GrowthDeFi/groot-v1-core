@@ -15,13 +15,10 @@ module.exports = {
   networks: {
     bscmain: {
       network_id: 56,
-      networkCheckTimeout: 10000, // fixes truffle bug
       provider: () => new HDWalletProvider(privateKey, 'https://bsc-dataseed.binance.org/'),
-      skipDryRun: false,
     },
     chapel: {
       network_id: 97,
-      networkCheckTimeout: 10000, // fixes truffle bug
       provider: () => new HDWalletProvider(privateKey, 'https://data-seed-prebsc-1-s1.binance.org:8545/'),
       skipDryRun: true,
     },

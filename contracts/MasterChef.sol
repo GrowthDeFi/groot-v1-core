@@ -6,6 +6,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
+import { GRewardHolder } from "./GRewardHolder.sol";
 import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 
@@ -72,6 +73,8 @@ contract MasterChef is Ownable {
     uint256 public BONUS_MULTIPLIER = 1;
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
+    // The cake holder contract
+    GRewardHolder public holder;
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -109,6 +112,11 @@ contract MasterChef is Ownable {
 
         totalAllocPoint = 1000;
 
+        holder = GRewardHolder(address(_cake));
+    }
+
+    function setHolder(GRewardHolder _holder) public onlyOwner {
+        holder = _holder;
     }
 
     function updateCakePerBlock(uint256 _cakePerBlock) public onlyOwner {
@@ -168,7 +176,7 @@ contract MasterChef is Ownable {
 
     // Set the migrator contract. Can only be called by the owner.
     function setMigrator(IMigratorChef _migrator) public onlyOwner {
-        migrator = _migrator;
+        // migrator = _migrator;
     }
 
     // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
@@ -224,8 +232,8 @@ contract MasterChef is Ownable {
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
         uint256 cakeReward = multiplier.mul(cakePerBlock).mul(pool.allocPoint).div(totalAllocPoint);
-        cake.mint(devaddr, cakeReward.div(10));
-        cake.mint(address(syrup), cakeReward);
+        holder.mint(devaddr, cakeReward.div(10));
+        holder.mint(address(syrup), cakeReward);
         pool.accCakePerShare = pool.accCakePerShare.add(cakeReward.mul(1e12).div(lpSupply));
         pool.lastRewardBlock = block.number;
     }
