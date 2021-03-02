@@ -111,12 +111,12 @@ contract GRewardCompoundingStrategyToken is ERC20, Ownable, ReentrancyGuard
 	function gulpRewards(uint256 _minRewardCost) external nonReentrant
 	{
 		require(exchange != address(0), "exchange not set");
-		uint256 _rewardAmount = Transfers._getBalance(rewardToken);
-		uint256 _routingAmount = _rewardAmount;
 		if (routingToken != rewardToken) {
+			uint256 _rewardAmount = Transfers._getBalance(rewardToken);
 			Transfers._approveFunds(rewardToken, exchange, _rewardAmount);
-			_routingAmount = GExchange(exchange).convertFundsFromInput(rewardToken, routingToken, _rewardAmount, 1);
+			GExchange(exchange).convertFundsFromInput(rewardToken, routingToken, _rewardAmount, 1);
 		}
+		uint256 _routingAmount = Transfers._getBalance(routingToken);
 		uint256 _rewardCost = PancakeSwapLiquidityPoolAbstraction._joinPool(reserveToken, routingToken, _routingAmount);
 	        require(_rewardCost >= _minRewardCost, "high slippage");
 		Transfers._approveFunds(reserveToken, masterChef, _rewardCost);
