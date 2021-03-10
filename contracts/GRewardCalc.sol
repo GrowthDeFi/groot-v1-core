@@ -20,56 +20,54 @@ contract GRewardCalc
 		uint256 lastCumulativeReward;
 	}
 
-	function _calcUpdateContract() internal view returns (uint256 _lastCumulativeStake, uint256 _lastCumulativeReward)
+	function _calcUpdate(address _account) internal view returns (uint256 _contractStake, uint256 _contractReward, uint256 _accountReward)
 	{
-		uint256 _lastBlock = accounts[CONTRACT].lastBlock;
-		_lastCumulativeStake = accounts[CONTRACT].lastCumulativeStake;
-		_lastCumulativeReward = accounts[CONTRACT].lastCumulativeReward;
-		if (block.number > _lastBlock) {
-			uint256 _n = block.number - _lastBlock;
-			_lastCumulativeStake = _lastCumulativeStake.add(_n.mul(accounts[CONTRACT].amount));
-			_lastCumulativeReward = _lastCumulativeReward.add(_n.mul(rewardPerBlock));
+		_contractStake = accounts[CONTRACT].lastCumulativeStake;
+		_contractReward = accounts[CONTRACT].lastCumulativeReward;
+		_accountReward = accounts[_account].lastCumulativeReward;
+		{
+			uint256 _accountBlock = accounts[_account].lastBlock;
+			if (block.number > _accountBlock) {
+				uint256 _contractBlock = accounts[CONTRACT].lastBlock;
+				if (block.number > _contractBlock) {
+					uint256 _contractAmount = accounts[CONTRACT].amount;
+					if (_contractAmount > 0) {
+						uint256 _n = block.number - _contractBlock;
+						_contractStake = _contractStake.add(_n.mul(_contractAmount));
+						_contractReward = _contractReward.add(_n.mul(rewardPerBlock));
+					}
+				}
+				uint256 _accountAmount = accounts[_account].amount;
+				if (_accountAmount > 0) {
+					uint256 _n = block.number - _accountBlock;
+					uint256 _accountStake = _n.mul(_accountAmount);
+					uint256 _reward = _contractReward.mul(_accountStake).div(_contractStake);
+					_contractStake = _contractStake.sub(_accountStake);
+					_contractReward = _contractReward.sub(_reward);
+					_accountReward = _accountReward.add(_reward);
+				}
+			}
 		}
-	}
-
-	function _calcUpdateAccount(address _account) internal view returns (uint256 _lastCumulativeStake, uint256 _lastCumulativeReward)
-	{
-		assert(_account != CONTRACT);
-		uint256 _lastBlock = accounts[_account].lastBlock;
-		_lastCumulativeStake = accounts[_account].lastCumulativeStake;
-		_lastCumulativeReward = accounts[_account].lastCumulativeReward;
-		if (block.number > _lastBlock) {
-			uint256 _n = block.number - _lastBlock;
-			_lastCumulativeStake = _lastCumulativeStake.add(_n.mul(accounts[_account].amount));
-		}
-	}
-
-	function _calcDistributeReward(uint256 _accountStake, uint256 _contractStake, uint256 _contractReward) internal pure returns (uint256 _reward)
-	{
-		return _contractReward.mul(_accountStake).div(_contractStake);
+		return (_contractStake, _contractReward, _accountReward);
 	}
 
 	function _update(address _account) internal
 	{
-		assert(_account != CONTRACT);
-		(uint256 _contractStake, uint256 _contractReward) = _calcUpdateContract();
-		(uint256 _accountStake, uint256 _accountReward) = _calcUpdateAccount(_account);
-		uint256 _reward = _calcDistributeReward(_accountStake, _contractStake, _contractReward);
+		(uint256 _contractStake, uint256 _contractReward, uint256 _accountReward) = _calcUpdate(_account);
+
 		accounts[CONTRACT].lastBlock = block.number;
-		accounts[CONTRACT].lastCumulativeStake = _contractStake.sub(_accountStake);
-		accounts[CONTRACT].lastCumulativeReward = _contractReward.sub(_reward);
+		accounts[CONTRACT].lastCumulativeStake = _contractStake;
+		accounts[CONTRACT].lastCumulativeReward = _contractReward;
+
 		accounts[_account].lastBlock = block.number;
-		accounts[_account].lastCumulativeStake = 0;
-		accounts[_account].lastCumulativeReward = _accountReward.add(_reward);
+		accounts[_account].lastCumulativeReward = _accountReward;
 	}
 
 	function pendingReward(address _account) external view returns (uint256 _pendingReward)
 	{
 		require(_account != CONTRACT, "invalid account");
-		(uint256 _contractStake, uint256 _contractReward) = _calcUpdateContract();
-		(uint256 _accountStake, uint256 _accountReward) = _calcUpdateAccount(_account);
-		uint256 _reward = _calcDistributeReward(_accountStake, _contractStake, _contractReward);
-		return _accountReward.add(_reward);
+		(,,_pendingReward) = _calcUpdate(_account);
+		return _pendingReward;
 	}
 
 	function registerStake(address _account, uint256 _amount) external
