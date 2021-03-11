@@ -113,6 +113,11 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		emit ChangeDev(_oldDev, _newDev);
 	}
 
+	function _beforeTokenTransfer(address _from, address _to, uint256 /*_amount*/) internal override
+	{
+		require(_from == address(0) || _to == address(0), "transfer prohibited");
+	}
+
 	function _distributeFee(uint256 _fee) internal
 	{
 		require(exchange != address(0), "exchange not set");
