@@ -65,14 +65,14 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		return staking.totalStakedAmount;
 	}
 
-	function totalUnclaimedReward() external view returns (uint256 _reward)
-	{
-		return staking._totalUnclaimedReward();
-	}
-
 	function totalAvailableReward() external view returns (uint256 _reward)
 	{
 		return staking._totalAvailableReward();
+	}
+
+	function totalUnclaimedReward() external view returns (uint256 _reward)
+	{
+		return staking._totalUnclaimedReward();
 	}
 
 	function unclaimedReward(address _account) external view returns (uint256 _reward)
@@ -83,7 +83,7 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 	function calcFee(uint256 _amount) public view returns (uint256 _fee)
 	{
 		require(exchange != address(0), "exchange not set");
-		uint256 _feeAmount = _amount.mul(STAKING_FEE).div(1e18);
+		uint256 _feeAmount = _amount.mul(STAKING_FEE) / 1e18;
 		return GExchange(exchange).calcConversionFromOutput(feeToken, reserveToken, _feeAmount);
 	}
 
@@ -120,9 +120,9 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		address _from = msg.sender;
 		uint256 _reward = staking._claim(_from);
 		Transfers._pullFunds(staking.rewardToken, _from, _reward);
-		require(exchange != address(0), "exchange not set");
-		uint256 _fee = _reward.mul(STAKING_FEE).div(1e18);
+		uint256 _fee = _reward.mul(STAKING_FEE) / 1e18;
 		uint256 _net = _reward - _fee;
+		require(exchange != address(0), "exchange not set");
 		if (staking.rewardToken != feeToken) {
 			Transfers._approveFunds(staking.rewardToken, exchange, _fee);
 			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _fee, 1);
@@ -172,9 +172,9 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 	function _distributeFee(uint256 _fee) internal
 	{
 		require(exchange != address(0), "exchange not set");
-		uint256 _treasuryFee = _fee.mul(STAKING_FEE_TREASURY_SHARE).div(1e18);
-		uint256 _devFee = _fee.mul(STAKING_FEE_DEV_SHARE).div(1e18);
-		uint256 _buybackFee = _fee.sub(_treasuryFee.add(_devFee));
+		uint256 _treasuryFee = _fee.mul(STAKING_FEE_TREASURY_SHARE) / 1e18;
+		uint256 _devFee = _fee.mul(STAKING_FEE_DEV_SHARE) / 1e18;
+		uint256 _buybackFee = _fee - (_treasuryFee + _devFee);
 		Transfers._approveFunds(feeToken, exchange, _buybackFee);
 		uint256 _buyback = GExchange(exchange).convertFundsFromInput(feeToken, reserveToken, _buybackFee, 1);
 		Transfers._pushFunds(reserveToken, treasury, _buyback);
