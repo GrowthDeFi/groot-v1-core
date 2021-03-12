@@ -73,10 +73,10 @@ library Staking
 		_self.totalStakedAmount -= _amount;
 	}
 
-	function _claim(Self storage _self, address _account) internal
+	function _claim(Self storage _self, address _account) internal returns (uint256 _reward)
 	{
 		_update(_self, _account);
-		uint256 _reward = _self.accounts[_account].lastUnclaimedReward;
+		_reward = _self.accounts[_account].lastUnclaimedReward;
 		_self.accounts[_account].lastUnclaimedReward = 0;
 		_self.lastTotalUnclaimedReward2 -= _reward;
 		Transfers._pushFunds(_self.rewardToken, _account, _reward);

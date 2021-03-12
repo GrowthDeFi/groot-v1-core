@@ -115,6 +115,25 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		staking._claim(_from);
 	}
 
+	function claimAndDeposit() external onlyEOA nonReentrant
+	{
+		address _from = msg.sender;
+		uint256 _reward = staking._claim(_from);
+		Transfers._pullFunds(staking.rewardToken, _from, _reward);
+		require(exchange != address(0), "exchange not set");
+		uint256 _fee = _reward.mul(STAKING_FEE).div(1e18);
+		uint256 _net = _reward - _fee;
+		if (staking.rewardToken != feeToken) {
+			Transfers._approveFunds(staking.rewardToken, exchange, _fee);
+			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _fee, 1);
+		}
+		_distributeFee(_fee);
+		Transfers._approveFunds(staking.rewardToken, exchange, _net);
+		uint256 _amount = GExchange(exchange).convertFundsFromInput(staking.rewardToken, reserveToken, _net, 1);
+		_mint(_from, _amount);
+		staking._stake(_from, _amount);
+	}
+
 	function setExchange(address _newExchange) external onlyOwner nonReentrant
 	{
 		address _oldExchange = exchange;
