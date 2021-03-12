@@ -41,14 +41,12 @@ library Staking
 
 	function _pendingReward(Self storage _self, address _account) internal view returns (uint256 _reward)
 	{
-		require(_account != CONTRACT, "invalid account");
 		(,,_reward) = _calcUpdate(_self, _account);
 		return _reward;
 	}
 
 	function _stake(Self storage _self, address _account, uint256 _amount) internal
 	{
-		require(_account != CONTRACT, "invalid account");
 		_update(_self, _account);
 		// assert(_self.accounts[_account].stakedAmount <= _self.totalStakedAmount);
 		_self.totalStakedAmount = _self.totalStakedAmount.add(_amount);
@@ -57,7 +55,6 @@ library Staking
 
 	function _unstake(Self storage _self, address _account, uint256 _amount) internal
 	{
-		require(_account != CONTRACT, "invalid account");
 		_update(_self, _account);
 		// assert(_self.accounts[_account].stakedAmount <= _self.totalStakedAmount);
 		_self.accounts[_account].stakedAmount = _self.accounts[_account].stakedAmount.sub(_amount);
@@ -66,7 +63,6 @@ library Staking
 
 	function _claim(Self storage _self, address _account) internal
 	{
-		require(_account != CONTRACT, "invalid account");
 		_update(_self, _account);
 		uint256 _reward = _self.accounts[_account].lastCumulativeReward;
 		_self.accounts[_account].lastCumulativeReward = 0;

@@ -8,11 +8,13 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.s
 
 import { GExchange } from "./GExchange.sol";
 
+import { Staking } from "./modules/Staking.sol";
 import { Transfers } from "./modules/Transfers.sol";
 
 contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 {
 	using SafeMath for uint256;
+	using Staking for Staking.Self;
 
 	uint256 constant STAKING_FEE = 11e16; // 11%
 
@@ -21,11 +23,13 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 	uint256 constant STAKING_FEE_DEV_SHARE = 90909090909090909; // 1% of 11%
 
 	address public immutable reserveToken;
-	address public immutable miningToken;
+	address public immutable feeToken;
 
 	address public exchange;
 	address public treasury;
 	address public dev;
+
+	Staking.Self staking;
 
 	modifier onlyEOA()
 	{
@@ -33,61 +37,67 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		_;
 	}
 
-	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _reserveToken, address _miningToken)
+	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _reserveToken, address _feeToken, address _rewardToken)
 		ERC20(_name, _symbol) public
 	{
-		address _treasury = msg.sender;
+		address _from = msg.sender;
+		assert(_reserveToken != _rewardToken);
 		_setupDecimals(_decimals);
 		reserveToken = _reserveToken;
-		miningToken = _miningToken;
-		treasury = _treasury;
-		_mint(address(1), 1); // avoids division by zero
+		feeToken = _feeToken;
+		treasury = _from;
+		dev = _from;
+		staking._init(_rewardToken);
+	}
+
+	function rewardToken() external view returns (address _rewardToken)
+	{
+		return staking.rewardToken;
+	}
+
+	function rewardPerBlock() external view returns (uint256 _rewardPerBlock)
+	{
+		return staking.rewardPerBlock;
 	}
 
 	function totalReserve() public view returns (uint256 _totalReserve)
 	{
-		_totalReserve = Transfers._getBalance(reserveToken);
-		if (_totalReserve == uint256(-1)) return _totalReserve;
-		return _totalReserve + 1; // avoids division by zero
+		return staking.totalStakedAmount;
 	}
 
-	function calcSharesFromCost(uint256 _cost) public view returns (uint256 _shares)
-	{
-		return _cost.mul(totalSupply()).div(totalReserve());
-	}
-
-	function calcCostFromShares(uint256 _shares) public view returns (uint256 _cost)
-	{
-		return _shares.mul(totalReserve()).div(totalSupply());
-	}
-
-	function calcFeeFromCost(uint256 _cost) public view returns (uint256 _fee)
+	function calcFee(uint256 _amount) public view returns (uint256 _fee)
 	{
 		require(exchange != address(0), "exchange not set");
-		uint256 _feeCost = _cost.mul(STAKING_FEE).div(1e18);
-		return GExchange(exchange).calcConversionFromOutput(miningToken, reserveToken, _feeCost);
+		uint256 _feeAmount = _amount.mul(STAKING_FEE).div(1e18);
+		return GExchange(exchange).calcConversionFromOutput(feeToken, reserveToken, _feeAmount);
 	}
 
-	function deposit(uint256 _cost) external onlyEOA nonReentrant
+	function deposit(uint256 _amount) external onlyEOA nonReentrant
 	{
 		address _from = msg.sender;
-		uint256 _shares = calcSharesFromCost(_cost);
-		uint256 _fee = calcFeeFromCost(_cost);
-		Transfers._pullFunds(miningToken, _from, _fee);
-		Transfers._pullFunds(reserveToken, _from, _cost);
-		_mint(_from, _shares);
+		uint256 _fee = calcFee(_amount);
+		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
+		Transfers._pullFunds(reserveToken, _from, _amount);
+		_mint(_from, _amount);
+		staking._stake(_from, _amount);
 	}
 
-	function withdraw(uint256 _shares) external onlyEOA nonReentrant
+	function withdraw(uint256 _amount) external onlyEOA nonReentrant
 	{
 		address _from = msg.sender;
-		uint256 _cost = calcCostFromShares(_shares);
-		uint256 _fee = calcFeeFromCost(_cost);
-		Transfers._pullFunds(miningToken, _from, _fee);
-		Transfers._pushFunds(reserveToken, _from, _cost);
-		_burn(_from, _shares);
+		uint256 _fee = calcFee(_amount);
+		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
+		staking._unstake(_from, _amount);
+		_burn(_from, _amount);
+		Transfers._pushFunds(reserveToken, _from, _amount);
+	}
+
+	function claim() external onlyEOA nonReentrant
+	{
+		address _from = msg.sender;
+		staking._claim(_from);
 	}
 
 	function setExchange(address _newExchange) external onlyOwner nonReentrant
@@ -113,6 +123,13 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		emit ChangeDev(_oldDev, _newDev);
 	}
 
+	function setRewardPerBlock(uint256 _newRewardPerBlock) external onlyOwner nonReentrant
+	{
+		uint256 _oldRewardPerBlock = staking.rewardPerBlock;
+		staking._setRewardPerBlock(_newRewardPerBlock);
+		emit ChangeRewardPerBlock(_oldRewardPerBlock, _newRewardPerBlock);
+	}
+
 	function _beforeTokenTransfer(address _from, address _to, uint256 /*_amount*/) internal override
 	{
 		require(_from == address(0) || _to == address(0), "transfer prohibited");
@@ -124,13 +141,14 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		uint256 _treasuryFee = _fee.mul(STAKING_FEE_TREASURY_SHARE).div(1e18);
 		uint256 _devFee = _fee.mul(STAKING_FEE_DEV_SHARE).div(1e18);
 		uint256 _buybackFee = _fee.sub(_treasuryFee.add(_devFee));
-		Transfers._approveFunds(miningToken, exchange, _buybackFee);
-		uint256 _buyback = GExchange(exchange).convertFundsFromInput(miningToken, reserveToken, _buybackFee, 1);
+		Transfers._approveFunds(feeToken, exchange, _buybackFee);
+		uint256 _buyback = GExchange(exchange).convertFundsFromInput(feeToken, reserveToken, _buybackFee, 1);
 		Transfers._pushFunds(reserveToken, treasury, _buyback);
-		Transfers._pushFunds(miningToken, treasury, _treasuryFee);
-		Transfers._pushFunds(miningToken, dev, _devFee);
+		Transfers._pushFunds(feeToken, treasury, _treasuryFee);
+		Transfers._pushFunds(feeToken, dev, _devFee);
 	}
 
+	event ChangeRewardPerBlock(uint256 _oldRewardPerBlock, uint256 _newRewardPerBlock);
 	event ChangeExchange(address _oldExchange, address _newExchange);
 	event ChangeTreasury(address _oldTreasury, address _newTreasury);
 	event ChangeDev(address _oldDev, address _newDev);
