@@ -41,10 +41,10 @@ contract stkgROOT_BNB is GRewardCompoundingStrategyToken
 	}
 }
 
-contract harvgROOT_BNB is GHarvestToken
+contract harvgROOT is GHarvestToken
 {
 	constructor (address _gROOT)
-		GHarvestToken("harvest gROOT/BNB", "harvgROOT/BNB", 18, _gROOT, $.WBNB, $.WBNB) public
+		GHarvestToken("harvest gROOT/BNB", "harvgROOT", 18, _gROOT, $.WBNB, $.WBNB) public
 	{
 	}
 }

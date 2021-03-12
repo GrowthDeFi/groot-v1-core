@@ -4,6 +4,7 @@ pragma solidity ^0.6.0;
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 import { GExchange } from "./GExchange.sol";
@@ -15,12 +16,13 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 {
 	using SafeMath for uint256;
 	using Staking for Staking.Self;
+	using EnumerableSet for EnumerableSet.AddressSet;
 
 	uint256 constant STAKING_FEE = 11e16; // 11%
 
 	uint256 constant STAKING_FEE_TREASURY_SHARE = 727272727272727272; // 8% of 11%
 	uint256 constant STAKING_FEE_BUYBACK_SHARE = 181818181818181818; // 2% of 11%
-	uint256 constant STAKING_FEE_DEV_SHARE = 90909090909090909; // 1% of 11%
+	uint256 constant STAKING_FEE_DEV_SHARE = 90909090909090910; // 1% of 11%
 
 	address public immutable reserveToken;
 	address public immutable feeToken;
@@ -29,11 +31,14 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	address public treasury;
 	address public dev;
 
-	Staking.Self staking;
+	Staking.Self private staking;
 
-	modifier onlyEOA()
+	EnumerableSet.AddressSet private whitelist;
+
+	modifier onlyEOAorWhitelist()
 	{
-		require(tx.origin == _msgSender(), "not an externally owned account");
+		address _from = _msgSender();
+		require(tx.origin == _from || whitelist.contains(_from), "access denied");
 		_;
 	}
 
@@ -87,7 +92,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		return GExchange(exchange).calcConversionFromOutput(feeToken, reserveToken, _feeAmount);
 	}
 
-	function deposit(uint256 _amount) external onlyEOA nonReentrant
+	function deposit(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
 		uint256 _fee = calcFee(_amount);
@@ -98,7 +103,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		staking._stake(_from, _amount);
 	}
 
-	function withdraw(uint256 _amount) external onlyEOA nonReentrant
+	function withdraw(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
 		uint256 _fee = calcFee(_amount);
@@ -109,20 +114,20 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		Transfers._pushFunds(reserveToken, _from, _amount);
 	}
 
-	function claim() external onlyEOA nonReentrant
+	function claim() external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
 		staking._claim(_from);
 	}
 
-	function claimAndDeposit() external onlyEOA nonReentrant
+	function claimAndDeposit() external onlyEOAorWhitelist nonReentrant
 	{
+		require(exchange != address(0), "exchange not set");
 		address _from = msg.sender;
 		uint256 _reward = staking._claim(_from);
 		Transfers._pullFunds(staking.rewardToken, _from, _reward);
 		uint256 _fee = _reward.mul(STAKING_FEE) / 1e18;
 		uint256 _net = _reward - _fee;
-		require(exchange != address(0), "exchange not set");
 		if (staking.rewardToken != feeToken) {
 			Transfers._approveFunds(staking.rewardToken, exchange, _fee);
 			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _fee, 1);
@@ -132,6 +137,16 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		uint256 _amount = GExchange(exchange).convertFundsFromInput(staking.rewardToken, reserveToken, _net, 1);
 		_mint(_from, _amount);
 		staking._stake(_from, _amount);
+	}
+
+	function addToWhitelist(address _address) external onlyOwner nonReentrant
+	{
+		require(whitelist.add(_address), "already in whitelisted");
+	}
+
+	function removeFromWhitelist(address _address) external onlyOwner nonReentrant
+	{
+		require(whitelist.remove(_address), "not in whitelisted");
 	}
 
 	function setExchange(address _newExchange) external onlyOwner nonReentrant
@@ -173,8 +188,8 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	{
 		require(exchange != address(0), "exchange not set");
 		uint256 _treasuryFee = _fee.mul(STAKING_FEE_TREASURY_SHARE) / 1e18;
-		uint256 _devFee = _fee.mul(STAKING_FEE_DEV_SHARE) / 1e18;
-		uint256 _buybackFee = _fee - (_treasuryFee + _devFee);
+		uint256 _buybackFee = _fee.mul(STAKING_FEE_BUYBACK_SHARE) / 1e18;
+		uint256 _devFee = _fee - (_treasuryFee + _buybackFee);
 		Transfers._approveFunds(feeToken, exchange, _buybackFee);
 		uint256 _buyback = GExchange(exchange).convertFundsFromInput(feeToken, reserveToken, _buybackFee, 1);
 		Transfers._pushFunds(reserveToken, treasury, _buyback);
@@ -182,8 +197,8 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		Transfers._pushFunds(feeToken, dev, _devFee);
 	}
 
-	event ChangeRewardPerBlock(uint256 _oldRewardPerBlock, uint256 _newRewardPerBlock);
 	event ChangeExchange(address _oldExchange, address _newExchange);
 	event ChangeTreasury(address _oldTreasury, address _newTreasury);
 	event ChangeDev(address _oldDev, address _newDev);
+	event ChangeRewardPerBlock(uint256 _oldRewardPerBlock, uint256 _newRewardPerBlock);
 }
