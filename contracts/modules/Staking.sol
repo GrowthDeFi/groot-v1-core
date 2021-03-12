@@ -17,7 +17,8 @@ library Staking
 
 		uint256 lastTotalBlock;
 		uint256 lastTotalCumulativeStake;
-		uint256 lastTotalCumulativeReward;
+		uint256 lastTotalUnclaimedReward1;
+		uint256 lastTotalUnclaimedReward2;
 
 		mapping (address => Account) accounts;
 	}
@@ -26,7 +27,7 @@ library Staking
 		uint256 stakedAmount;
 
 		uint256 lastBlock;
-		uint256 lastCumulativeReward;
+		uint256 lastUnclaimedReward;
 	}
 
 	function _init(Self storage _self, address _rewardToken) internal
@@ -39,16 +40,15 @@ library Staking
 		_self.rewardPerBlock = _rewardPerBlock;
 	}
 
-	function _pendingReward(Self storage _self, address _account) internal view returns (uint256 _reward)
+	function _unclaimedReward(Self storage _self, address _account) internal view returns (uint256 _reward)
 	{
-		(,,_reward) = _calcUpdate(_self, _account);
+		(,,,_reward) = _calcUpdate(_self, _account);
 		return _reward;
 	}
 
 	function _stake(Self storage _self, address _account, uint256 _amount) internal
 	{
 		_update(_self, _account);
-		// assert(_self.accounts[_account].stakedAmount <= _self.totalStakedAmount);
 		_self.totalStakedAmount = _self.totalStakedAmount.add(_amount);
 		_self.accounts[_account].stakedAmount += _amount;
 	}
@@ -56,7 +56,6 @@ library Staking
 	function _unstake(Self storage _self, address _account, uint256 _amount) internal
 	{
 		_update(_self, _account);
-		// assert(_self.accounts[_account].stakedAmount <= _self.totalStakedAmount);
 		_self.accounts[_account].stakedAmount = _self.accounts[_account].stakedAmount.sub(_amount);
 		_self.totalStakedAmount -= _amount;
 	}
@@ -64,16 +63,18 @@ library Staking
 	function _claim(Self storage _self, address _account) internal
 	{
 		_update(_self, _account);
-		uint256 _reward = _self.accounts[_account].lastCumulativeReward;
-		_self.accounts[_account].lastCumulativeReward = 0;
+		uint256 _reward = _self.accounts[_account].lastUnclaimedReward;
+		_self.accounts[_account].lastUnclaimedReward = 0;
+		_self.lastTotalUnclaimedReward2 -= _reward;
 		Transfers._pushFunds(_self.rewardToken, _account, _reward);
 	}
 
-	function _calcUpdate(Self storage _self, address _account) private view returns (uint256 _contractStake, uint256 _contractReward, uint256 _accountReward)
+	function _calcUpdate(Self storage _self, address _account) private view returns (uint256 _contractStake, uint256 _contractReward1, uint256 _contractReward2, uint256 _accountReward)
 	{
 		_contractStake = _self.lastTotalCumulativeStake;
-		_contractReward = _self.lastTotalCumulativeReward;
-		_accountReward = _self.accounts[_account].lastCumulativeReward;
+		_contractReward1 = _self.lastTotalUnclaimedReward1;
+		_contractReward2 = _self.lastTotalUnclaimedReward2;
+		_accountReward = _self.accounts[_account].lastUnclaimedReward;
 		{
 			uint256 _accountBlock = _self.accounts[_account].lastBlock;
 			if (block.number > _accountBlock) {
@@ -82,34 +83,43 @@ library Staking
 					uint256 _contractAmount = _self.totalStakedAmount;
 					if (_contractAmount > 0) {
 						uint256 _n = block.number - _contractBlock;
+
 						_contractStake = _contractStake.add(_n.mul(_contractAmount));
-						_contractReward = _contractReward.add(_n.mul(_self.rewardPerBlock));
+
+						uint256 _balance = Transfers._getBalance(_self.rewardToken);
+						uint256 _allocated = _contractReward1 + _contractReward2;
+						uint256 _available = _balance - _allocated;
+						uint256 _rewardPerBlock = _available / _n;
+						if (_rewardPerBlock > _self.rewardPerBlock) _rewardPerBlock = _self.rewardPerBlock;
+						uint256 _reward = _n * _rewardPerBlock;
+						_contractReward1 += _reward;
 					}
 				}
 				uint256 _accountAmount = _self.accounts[_account].stakedAmount;
 				if (_accountAmount > 0) {
 					uint256 _n = block.number - _accountBlock;
-					uint256 _accountStake = _n.mul(_accountAmount);
-					// assert(_accountStake > 0);
-					// assert(_contractStake >= _accountStake);
-					uint256 _reward = _contractReward.mul(_accountStake) / _contractStake;
-					// assert(_contractReward >= _reward);
+					uint256 _accountStake = _n * _accountAmount;
+
+					uint256 _reward = _contractReward1.mul(_accountStake) / _contractStake;
+
 					_contractStake -= _accountStake;
-					_contractReward -= _reward;
-					_accountReward = _accountReward.add(_reward);
+					_contractReward1 -= _reward;
+					_contractReward2 += _reward;
+					_accountReward += _reward;
 				}
 			}
 		}
-		return (_contractStake, _contractReward, _accountReward);
+		return (_contractStake, _contractReward1, _contractReward2, _accountReward);
 	}
 
 	function _update(Self storage _self, address _account) private
 	{
-		(uint256 _contractStake, uint256 _contractReward, uint256 _accountReward) = _calcUpdate(_self, _account);
+		(uint256 _contractStake, uint256 _contractReward1, uint256 _contractReward2, uint256 _accountReward) = _calcUpdate(_self, _account);
 		_self.lastTotalBlock = block.number;
 		_self.lastTotalCumulativeStake = _contractStake;
-		_self.lastTotalCumulativeReward = _contractReward;
+		_self.lastTotalUnclaimedReward1 = _contractReward1;
+		_self.lastTotalUnclaimedReward2 = _contractReward2;
 		_self.accounts[_account].lastBlock = block.number;
-		_self.accounts[_account].lastCumulativeReward = _accountReward;
+		_self.accounts[_account].lastUnclaimedReward = _accountReward;
 	}
 }

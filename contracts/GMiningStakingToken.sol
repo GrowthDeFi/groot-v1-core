@@ -60,9 +60,14 @@ contract GMiningStakingToken is ERC20, Ownable, ReentrancyGuard
 		return staking.rewardPerBlock;
 	}
 
-	function totalReserve() public view returns (uint256 _totalReserve)
+	function totalReserve() external view returns (uint256 _totalReserve)
 	{
 		return staking.totalStakedAmount;
+	}
+
+	function unclaimedReward(address _account) public view returns (uint256 _reward)
+	{
+		return staking._unclaimedReward(_account);
 	}
 
 	function calcFee(uint256 _amount) public view returns (uint256 _fee)
