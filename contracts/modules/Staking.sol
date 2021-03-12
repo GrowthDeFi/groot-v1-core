@@ -40,10 +40,16 @@ library Staking
 		_self.rewardPerBlock = _rewardPerBlock;
 	}
 
-	function _availableReward(Self storage _self) internal view returns (uint256 _reward)
+	function _totalUnclaimedReward(Self storage _self) internal view returns (uint256 _reward)
+	{
+		(,uint256 _contractReward1, uint256 _contractReward2,) = _calcUpdate(_self, address(0));
+		return _contractReward1 + _contractReward2;
+	}
+
+	function _totalAvailableReward(Self storage _self) internal view returns (uint256 _reward)
 	{
 		uint256 _balanceReward = Transfers._getBalance(_self.rewardToken);
-		uint256 _unclaimedReward = _self.lastTotalUnclaimedReward1 + _self.lastTotalUnclaimedReward2;
+		uint256 _unclaimedReward = _totalUnclaimedReward(_self);
 		return _balanceReward - _unclaimedReward;
 	}
 
@@ -93,11 +99,15 @@ library Staking
 
 						_contractStake = _contractStake.add(_n.mul(_contractAmount));
 
-						uint256 _reward = _availableReward(_self);
-						uint256 _rewardPerBlock = _reward / _n;
-						if (_rewardPerBlock > _self.rewardPerBlock) _rewardPerBlock = _self.rewardPerBlock;
-						_reward = _n * _rewardPerBlock;
-						_contractReward1 += _reward;
+						uint256 _balance = Transfers._getBalance(_self.rewardToken);
+						if (_balance > 0) {
+							uint256 _unclaimed = _contractReward1 + _contractReward2;
+							uint256 _available = _balance - _unclaimed;
+							uint256 _rewardPerBlock = _available / _n;
+							if (_rewardPerBlock > _self.rewardPerBlock) _rewardPerBlock = _self.rewardPerBlock;
+							uint256 _reward = _n * _rewardPerBlock;
+							_contractReward1 += _reward;
+						}
 					}
 				}
 				uint256 _accountAmount = _self.accounts[_account].stakedAmount;
