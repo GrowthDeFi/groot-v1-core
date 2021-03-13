@@ -126,10 +126,10 @@ library Staking
 					if (_currentBlock > _accountBlock) {
 						uint256 _n = _currentBlock - _accountBlock;
 						uint256 _accountStake = _n * _accountAmount;
-						_contractStake -= _accountStake;
 
 						uint256 _reward = _contractReward1.mul(_accountStake) / _contractStake;
 
+						_contractStake -= _accountStake;
 						_contractReward1 -= _reward;
 						_contractReward2 += _reward;
 						_accountReward += _reward;
