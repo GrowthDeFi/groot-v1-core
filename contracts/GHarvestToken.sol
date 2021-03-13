@@ -95,6 +95,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function deposit(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
+		require(exchange != address(0), "exchange not set");
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
@@ -106,6 +107,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function withdraw(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
+		require(exchange != address(0), "exchange not set");
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
@@ -122,19 +124,20 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 
 	function claimAndDeposit() external onlyEOAorWhitelist nonReentrant
 	{
-		require(exchange != address(0), "exchange not set");
 		address _from = msg.sender;
+		require(exchange != address(0), "exchange not set");
 		uint256 _reward = staking._claim(_from);
 		Transfers._pullFunds(staking.rewardToken, _from, _reward);
-		uint256 _fee = _reward.mul(STAKING_FEE) / 1e18;
-		uint256 _net = _reward - _fee;
+		uint256 _feeReward = _reward.mul(STAKING_FEE) / 1e18;
+		uint256 _fee = _feeReward;
 		if (staking.rewardToken != feeToken) {
-			Transfers._approveFunds(staking.rewardToken, exchange, _fee);
-			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _fee, 1);
+			Transfers._approveFunds(staking.rewardToken, exchange, _feeReward);
+			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _feeReward, 1);
 		}
 		_distributeFee(_fee);
-		Transfers._approveFunds(staking.rewardToken, exchange, _net);
-		uint256 _amount = GExchange(exchange).convertFundsFromInput(staking.rewardToken, reserveToken, _net, 1);
+		uint256 _netReward = _reward - _feeReward;
+		Transfers._approveFunds(staking.rewardToken, exchange, _netReward);
+		uint256 _amount = GExchange(exchange).convertFundsFromInput(staking.rewardToken, reserveToken, _netReward, 1);
 		_mint(_from, _amount);
 		staking._stake(_from, _amount);
 	}
@@ -186,9 +189,8 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 
 	function _distributeFee(uint256 _fee) internal
 	{
-		require(exchange != address(0), "exchange not set");
-		uint256 _treasuryFee = _fee.mul(STAKING_FEE_TREASURY_SHARE) / 1e18;
-		uint256 _buybackFee = _fee.mul(STAKING_FEE_BUYBACK_SHARE) / 1e18;
+		uint256 _treasuryFee = (_fee * STAKING_FEE_TREASURY_SHARE) / 1e18;
+		uint256 _buybackFee = (_fee * STAKING_FEE_BUYBACK_SHARE) / 1e18;
 		uint256 _devFee = _fee - (_treasuryFee + _buybackFee);
 		Transfers._approveFunds(feeToken, exchange, _buybackFee);
 		uint256 _buyback = GExchange(exchange).convertFundsFromInput(feeToken, reserveToken, _buybackFee, 1);
