@@ -70,6 +70,11 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		return staking.totalStakedAmount;
 	}
 
+	function latestRewardedBlock() external view returns (uint256 _block)
+	{
+		return staking._latestRewardedBlock();
+	}
+
 	function totalAvailableReward() external view returns (uint256 _reward)
 	{
 		return staking._totalAvailableReward();
