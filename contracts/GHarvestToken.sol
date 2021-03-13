@@ -122,7 +122,13 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		_distributeFee(_fee);
 	}
 
-	function depositNative(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
+	function claim() external onlyEOAorWhitelist nonReentrant
+	{
+		address _from = msg.sender;
+		staking._claim(_from, _from);
+	}
+
+	function depositBNB(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
@@ -136,7 +142,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		if (_value > _fee) _from.transfer(_value - _fee);
 	}
 
-	function withdrawNative(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
+	function withdrawBNB(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
@@ -150,10 +156,13 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		if (_value > _fee) _from.transfer(_value - _fee);
 	}
 
-	function claim() external onlyEOAorWhitelist nonReentrant
+	function claimBNB() external onlyEOAorWhitelist nonReentrant
 	{
-		address _from = msg.sender;
-		staking._claim(_from);
+		address payable _from = msg.sender;
+		require(feeToken == $.WBNB, "unsupported");
+		uint256 _reward = staking._claim(_from, address(this));
+		Wrapping._unwrap(_reward);
+		_from.transfer(_reward);
 	}
 
 	function addToWhitelist(address _address) external onlyOwner nonReentrant
