@@ -100,7 +100,6 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function deposit(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		require(exchange != address(0), "exchange not set");
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
@@ -112,7 +111,6 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function withdraw(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		require(exchange != address(0), "exchange not set");
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
 		_distributeFee(_fee);
@@ -124,15 +122,14 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function claim() external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		staking._claim(_from);
+		staking._claim(_from, _from);
 	}
 
 	function claimAndDeposit() external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
 		require(exchange != address(0), "exchange not set");
-		uint256 _reward = staking._claim(_from);
-		Transfers._pullFunds(staking.rewardToken, _from, _reward);
+		uint256 _reward = staking._claim(_from, address(this));
 		uint256 _feeReward = _reward.mul(STAKING_FEE) / 1e18;
 		uint256 _fee = _feeReward;
 		if (staking.rewardToken != feeToken) {

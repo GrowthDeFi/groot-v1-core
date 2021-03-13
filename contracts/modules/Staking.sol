@@ -79,13 +79,13 @@ library Staking
 		_self.totalStakedAmount -= _amount;
 	}
 
-	function _claim(Self storage _self, address _account) internal returns (uint256 _reward)
+	function _claim(Self storage _self, address _account, address _receiver) internal returns (uint256 _reward)
 	{
 		_update(_self, _account);
 		_reward = _self.accounts[_account].lastUnclaimedReward;
 		_self.accounts[_account].lastUnclaimedReward = 0;
 		_self.lastTotalUnclaimedReward2 -= _reward;
-		Transfers._pushFunds(_self.rewardToken, _account, _reward);
+		Transfers._pushFunds(_self.rewardToken, _receiver, _reward);
 	}
 
 	function _calcUpdate(Self storage _self, address _account) private view returns (uint256 _currentBlock, uint256 _contractStake, uint256 _contractReward1, uint256 _contractReward2, uint256 _accountReward)
