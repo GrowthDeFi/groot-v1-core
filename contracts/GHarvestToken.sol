@@ -122,26 +122,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function claim() external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		staking._claim(_from, _from);
-	}
-
-	function claimAndDeposit() external onlyEOAorWhitelist nonReentrant
-	{
-		address _from = msg.sender;
-		require(exchange != address(0), "exchange not set");
-		uint256 _reward = staking._claim(_from, address(this));
-		uint256 _feeReward = _reward.mul(STAKING_FEE) / 1e18;
-		uint256 _fee = _feeReward;
-		if (staking.rewardToken != feeToken) {
-			Transfers._approveFunds(staking.rewardToken, exchange, _feeReward);
-			_fee = GExchange(exchange).convertFundsFromInput(staking.rewardToken, feeToken, _feeReward, 1);
-		}
-		_distributeFee(_fee);
-		uint256 _netReward = _reward - _feeReward;
-		Transfers._approveFunds(staking.rewardToken, exchange, _netReward);
-		uint256 _amount = GExchange(exchange).convertFundsFromInput(staking.rewardToken, reserveToken, _netReward, 1);
-		_mint(_from, _amount);
-		staking._stake(_from, _amount);
+		staking._claim(_from);
 	}
 
 	function addToWhitelist(address _address) external onlyOwner nonReentrant
