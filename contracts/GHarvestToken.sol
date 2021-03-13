@@ -11,6 +11,9 @@ import { GExchange } from "./GExchange.sol";
 
 import { Staking } from "./modules/Staking.sol";
 import { Transfers } from "./modules/Transfers.sol";
+import { Wrapping } from "./modules/Wrapping.sol";
+
+import { $ } from "./network/$.sol";
 
 contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 {
@@ -102,10 +105,10 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		address _from = msg.sender;
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
-		_distributeFee(_fee);
 		Transfers._pullFunds(reserveToken, _from, _amount);
 		_mint(_from, _amount);
 		staking._stake(_from, _amount);
+		_distributeFee(_fee);
 	}
 
 	function withdraw(uint256 _amount) external onlyEOAorWhitelist nonReentrant
@@ -113,10 +116,38 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		address _from = msg.sender;
 		uint256 _fee = calcFee(_amount);
 		Transfers._pullFunds(feeToken, _from, _fee);
-		_distributeFee(_fee);
-		staking._unstake(_from, _amount);
 		_burn(_from, _amount);
+		staking._unstake(_from, _amount);
 		Transfers._pushFunds(reserveToken, _from, _amount);
+		_distributeFee(_fee);
+	}
+
+	function depositNative(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
+	{
+		address payable _from = msg.sender;
+		uint256 _value = msg.value;
+		require(feeToken == $.WBNB, "unsupported");
+		uint256 _fee = calcFee(_amount);
+		Wrapping._wrap(_fee);
+		Transfers._pullFunds(reserveToken, _from, _amount);
+		_mint(_from, _amount);
+		staking._stake(_from, _amount);
+		_distributeFee(_fee);
+		if (_value > _fee) _from.transfer(_value - _fee);
+	}
+
+	function withdrawNative(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
+	{
+		address payable _from = msg.sender;
+		uint256 _value = msg.value;
+		require(feeToken == $.WBNB, "unsupported");
+		uint256 _fee = calcFee(_amount);
+		Wrapping._wrap(_fee);
+		_burn(_from, _amount);
+		staking._unstake(_from, _amount);
+		Transfers._pushFunds(reserveToken, _from, _amount);
+		_distributeFee(_fee);
+		if (_value > _fee) _from.transfer(_value - _fee);
 	}
 
 	function claim() external onlyEOAorWhitelist nonReentrant
