@@ -159,7 +159,7 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function claimBNB() external onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
-		require(feeToken == $.WBNB, "unsupported");
+		require(staking.rewardToken == $.WBNB, "unsupported");
 		uint256 _reward = staking._claim(_from, address(this));
 		Wrapping._unwrap(_reward);
 		_from.transfer(_reward);
