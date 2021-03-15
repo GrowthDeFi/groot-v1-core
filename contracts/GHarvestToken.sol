@@ -45,6 +45,13 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		_;
 	}
 
+	modifier onlyWhitelist()
+	{
+		address _from = _msgSender();
+		require(whitelist.contains(_from), "access denied");
+		_;
+	}
+
 	constructor (string memory _name, string memory _symbol, uint8 _decimals, address _reserveToken, address _feeToken, address _rewardToken)
 		ERC20(_name, _symbol) public
 	{
@@ -142,6 +149,20 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		if (_value > _fee) _from.transfer(_value - _fee);
 	}
 
+	function depositToBNB(uint256 _amount, address payable _account) external payable onlyWhitelist nonReentrant
+	{
+		address _from = msg.sender;
+		uint256 _value = msg.value;
+		require(feeToken == $.WBNB, "unsupported");
+		uint256 _fee = calcFee(_amount);
+		Wrapping._wrap(_fee);
+		Transfers._pullFunds(reserveToken, _from, _amount);
+		_mint(_account, _amount);
+		staking._stake(_account, _amount);
+		_distributeFee(_fee);
+		if (_value > _fee) _account.transfer(_value - _fee);
+	}
+
 	function withdrawBNB(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
@@ -226,4 +247,34 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	event ChangeTreasury(address _oldTreasury, address _newTreasury);
 	event ChangeDev(address _oldDev, address _newDev);
 	event ChangeRewardPerBlock(uint256 _oldRewardPerBlock, uint256 _newRewardPerBlock);
+}
+
+contract GHarvestTokenHelper
+{
+	using SafeMath for uint256;
+
+	uint256 constant STAKING_FEE = 11e16; // 11%
+
+	modifier onlyEOA()
+	{
+		require(tx.origin == msg.sender, "access denied");
+		_;
+	}
+
+	function depositBNB(address _token) external payable onlyEOA
+	{
+		address payable _from = msg.sender;
+		uint256 _value = msg.value;
+		address _reserveToken = GHarvestToken(_token).reserveToken();
+		address _feeToken = GHarvestToken(_token).feeToken();
+		address _exchange = GHarvestToken(_token).exchange();
+		require(_feeToken == $.WBNB, "unsupported");
+		uint256 _netValue = _value.mul(1e18) / (1e18 + STAKING_FEE);
+		uint256 _maxFee = _value - _netValue;
+		Wrapping._wrap(_netValue);
+		Transfers._approveFunds(_feeToken, _exchange, _netValue);
+		uint256 _amount = GExchange(_exchange).convertFundsFromInput(_feeToken, _reserveToken, _netValue, 1);
+		Transfers._approveFunds(_reserveToken, _token, _amount);
+		GHarvestToken(_token).depositToBNB{value: _maxFee}(_amount, _from);
+	}
 }
