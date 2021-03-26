@@ -175,8 +175,6 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		_from.transfer(_reward);
 	}
 
-	receive() external payable {} // not to be used directly
-
 	function addToWhitelist(address _address) external onlyOwner nonReentrant
 	{
 		require(whitelist.add(_address), "already in whitelisted");
@@ -259,6 +257,11 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		Transfers._pushFunds(feeToken, dev, _devFee);
 	}
 
+	receive() external payable
+	{
+		require(msg.sender == $.WBNB, "not allowed"); // not to be used directly
+	}
+
 	event ChangeExchange(address _oldExchange, address _newExchange);
 	event ChangeTreasury(address _oldTreasury, address _newTreasury);
 	event ChangeDev(address _oldDev, address _newDev);
@@ -270,6 +273,7 @@ contract GHarvestTokenHelper
 	using SafeMath for uint256;
 
 	uint256 constant STAKING_FEE = 11e16; // 11%
+	uint256 constant STAKING_FEE_ROOM = 1e16; // 1%
 
 	modifier onlyEOA()
 	{
@@ -301,7 +305,7 @@ contract GHarvestTokenHelper
 		address _feeToken = GHarvestToken(_token).feeToken();
 		address _exchange = GHarvestToken(_token).exchange();
 		if (_from != address(this)) Transfers._pullFunds(_feeToken, _from, _value);
-		uint256 _netValue = _value.mul(1e18) / (1e18 + STAKING_FEE);
+		uint256 _netValue = _value.mul(1e18) / (1e18 + STAKING_FEE + STAKING_FEE_ROOM);
 		uint256 _maxFee = _value - _netValue;
 		Transfers._approveFunds(_feeToken, _exchange, _netValue);
 		uint256 _amount = GExchange(_exchange).convertFundsFromInput(_feeToken, _reserveToken, _netValue, 1);
@@ -314,5 +318,10 @@ contract GHarvestTokenHelper
 		_feeChange = Transfers._getBalance(_feeToken);
 		if (_payer != address(this)) Transfers._pushFunds(_feeToken, _payer, _feeChange);
 		return _feeChange;
+	}
+
+	receive() external payable
+	{
+		require(msg.sender == $.WBNB, "not allowed"); // not to be used directly
 	}
 }
