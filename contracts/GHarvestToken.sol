@@ -110,23 +110,19 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	function deposit(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		uint256 _fee = calcFee(_amount);
-		Transfers._pullFunds(feeToken, _from, _fee);
-		Transfers._pullFunds(reserveToken, _from, _amount);
-		_mint(_from, _amount);
-		staking._stake(_from, _amount);
-		_distributeFee(_fee);
+		_deposit(_from, _amount, _from, _from, uint256(-1));
+	}
+
+	function depositTo(uint256 _amount, address _to) external onlyWhitelist nonReentrant
+	{
+		address _from = msg.sender;
+		_deposit(_from, _amount, _to, _from, uint256(-1));
 	}
 
 	function withdraw(uint256 _amount) external onlyEOAorWhitelist nonReentrant
 	{
 		address _from = msg.sender;
-		uint256 _fee = calcFee(_amount);
-		Transfers._pullFunds(feeToken, _from, _fee);
-		_burn(_from, _amount);
-		staking._unstake(_from, _amount);
-		Transfers._pushFunds(reserveToken, _from, _amount);
-		_distributeFee(_fee);
+		_withdraw(_from, _amount, _from, _from, uint256(-1));
 	}
 
 	function claim() external onlyEOAorWhitelist nonReentrant
@@ -139,48 +135,41 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
-		require(feeToken == $.WBNB, "unsupported");
-		uint256 _fee = calcFee(_amount);
-		Wrapping._wrap(_fee);
-		Transfers._pullFunds(reserveToken, _from, _amount);
-		_mint(_from, _amount);
-		staking._stake(_from, _amount);
-		_distributeFee(_fee);
-		if (_value > _fee) _from.transfer(_value - _fee);
+		require(feeToken == $.WBNB, "unsupported function");
+		Wrapping._wrap(_value);
+		uint256 _feeChange = _deposit(_from, _amount, _from, address(this), _value);
+		Wrapping._unwrap(_feeChange);
+		_from.transfer(_feeChange);
 	}
 
-	function depositToBNB(uint256 _amount, address payable _account) external payable onlyWhitelist nonReentrant
+	/*
+	function depositToBNB(uint256 _amount, address payable _to) external payable onlyWhitelist nonReentrant
 	{
 		address _from = msg.sender;
 		uint256 _value = msg.value;
-		require(feeToken == $.WBNB, "unsupported");
-		uint256 _fee = calcFee(_amount);
-		Wrapping._wrap(_fee);
-		Transfers._pullFunds(reserveToken, _from, _amount);
-		_mint(_account, _amount);
-		staking._stake(_account, _amount);
-		_distributeFee(_fee);
-		if (_value > _fee) _account.transfer(_value - _fee);
+		require(feeToken == $.WBNB, "unsupported function");
+		Wrapping._wrap(_value);
+		uint256 _feeChange = _deposit(_from, _amount, _to, address(this), _value);
+		Wrapping._unwrap(_feeChange);
+		_to.transfer(_feeChange);
 	}
+	*/
 
 	function withdrawBNB(uint256 _amount) external payable onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
-		require(feeToken == $.WBNB, "unsupported");
-		uint256 _fee = calcFee(_amount);
-		Wrapping._wrap(_fee);
-		_burn(_from, _amount);
-		staking._unstake(_from, _amount);
-		Transfers._pushFunds(reserveToken, _from, _amount);
-		_distributeFee(_fee);
-		if (_value > _fee) _from.transfer(_value - _fee);
+		require(feeToken == $.WBNB, "unsupported function");
+		Wrapping._wrap(_value);
+		uint256 _feeChange = _withdraw(_from, _amount, _from, address(this), _value);
+		Wrapping._unwrap(_feeChange);
+		_from.transfer(_feeChange);
 	}
 
 	function claimBNB() external onlyEOAorWhitelist nonReentrant
 	{
 		address payable _from = msg.sender;
-		require(staking.rewardToken == $.WBNB, "unsupported");
+		require(staking.rewardToken == $.WBNB, "unsupported function");
 		uint256 _reward = staking._claim(_from, address(this));
 		Wrapping._unwrap(_reward);
 		_from.transfer(_reward);
@@ -226,9 +215,34 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		emit ChangeRewardPerBlock(_oldRewardPerBlock, _newRewardPerBlock);
 	}
 
-	function _beforeTokenTransfer(address _from, address _to, uint256 /*_amount*/) internal override
+	function _beforeTokenTransfer(address _from, address _to, uint256 _amount) internal override
 	{
 		require(_from == address(0) || _to == address(0), "transfer prohibited");
+		_amount; // silences warning
+	}
+
+	function _deposit(address _from, uint256 _amount, address _to, address _payer, uint256 _maxFee) internal returns (uint256 _feeChange)
+	{
+		uint256 _fee = calcFee(_amount);
+		require(_fee <= _maxFee, "insufficient fee");
+		if (_payer != address(this)) Transfers._pullFunds(feeToken, _payer, _fee);
+		Transfers._pullFunds(reserveToken, _from, _amount);
+		_mint(_to, _amount);
+		staking._stake(_to, _amount);
+		_distributeFee(_fee);
+		return _maxFee - _fee;
+	}
+
+	function _withdraw(address _from, uint256 _amount, address _to, address _payer, uint256 _maxFee) internal returns (uint256 _feeChange)
+	{
+		uint256 _fee = calcFee(_amount);
+		require(_fee <= _maxFee, "insufficient fee");
+		if (_payer != address(this)) Transfers._pullFunds(feeToken, _payer, _fee);
+		_burn(_from, _amount);
+		staking._unstake(_from, _amount);
+		Transfers._pushFunds(reserveToken, _to, _amount);
+		_distributeFee(_fee);
+		return _maxFee - _fee;
 	}
 
 	function _distributeFee(uint256 _fee) internal
@@ -261,20 +275,40 @@ contract GHarvestTokenHelper
 		_;
 	}
 
-	function depositBNB(address _token) external payable onlyEOA
+	function depositFeeOnly(address _token, uint256 _value) external onlyEOA
+	{
+		address _from = msg.sender;
+		_depositFeeOnly(_token, _from, _value, _from, _from);
+	}
+
+	function depositFeeOnlyBNB(address _token) external payable onlyEOA
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
+		address _feeToken = GHarvestToken(_token).feeToken();
+		require(_feeToken == $.WBNB, "unsupported function");
+		Wrapping._wrap(_value);
+		uint256 _feeChange = _depositFeeOnly(_token, address(this), _value, _from, address(this));
+		Wrapping._unwrap(_feeChange);
+		_from.transfer(_feeChange);
+	}
+
+	function _depositFeeOnly(address _token, address _from, uint256 _value, address _to, address _payer) internal returns (uint256 _feeChange)
+	{
 		address _reserveToken = GHarvestToken(_token).reserveToken();
 		address _feeToken = GHarvestToken(_token).feeToken();
 		address _exchange = GHarvestToken(_token).exchange();
-		require(_feeToken == $.WBNB, "unsupported");
+		if (_from != address(this)) Transfers._pullFunds(_feeToken, _from, _value);
 		uint256 _netValue = _value.mul(1e18) / (1e18 + STAKING_FEE);
 		uint256 _maxFee = _value - _netValue;
-		Wrapping._wrap(_netValue);
 		Transfers._approveFunds(_feeToken, _exchange, _netValue);
 		uint256 _amount = GExchange(_exchange).convertFundsFromInput(_feeToken, _reserveToken, _netValue, 1);
+		Transfers._approveFunds(_feeToken, _token, _maxFee);
 		Transfers._approveFunds(_reserveToken, _token, _amount);
-		GHarvestToken(_token).depositToBNB{value: _maxFee}(_amount, _from);
+		GHarvestToken(_token).depositTo(_amount, _to);	
+		Transfers._approveFunds(_feeToken, _token, 0);
+		_feeChange = Transfers._getBalance(_feeToken);
+		if (_payer != address(this)) Transfers._pushFunds(_feeToken, _payer, _feeChange);
+		return _feeChange;
 	}
 }
