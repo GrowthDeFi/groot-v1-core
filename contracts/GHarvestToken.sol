@@ -175,6 +175,8 @@ contract GHarvestToken is ERC20, Ownable, ReentrancyGuard
 		_from.transfer(_reward);
 	}
 
+	receive() external payable {} // not to be used directly
+
 	function addToWhitelist(address _address) external onlyOwner nonReentrant
 	{
 		require(whitelist.add(_address), "already in whitelisted");
@@ -275,13 +277,13 @@ contract GHarvestTokenHelper
 		_;
 	}
 
-	function depositFeeOnly(address _token, uint256 _value) external onlyEOA
+	function depositFeeOnly(address payable _token, uint256 _value) external onlyEOA
 	{
 		address _from = msg.sender;
 		_depositFeeOnly(_token, _from, _value, _from, _from);
 	}
 
-	function depositFeeOnlyBNB(address _token) external payable onlyEOA
+	function depositFeeOnlyBNB(address payable _token) external payable onlyEOA
 	{
 		address payable _from = msg.sender;
 		uint256 _value = msg.value;
@@ -293,7 +295,7 @@ contract GHarvestTokenHelper
 		_from.transfer(_feeChange);
 	}
 
-	function _depositFeeOnly(address _token, address _from, uint256 _value, address _to, address _payer) internal returns (uint256 _feeChange)
+	function _depositFeeOnly(address payable _token, address _from, uint256 _value, address _to, address _payer) internal returns (uint256 _feeChange)
 	{
 		address _reserveToken = GHarvestToken(_token).reserveToken();
 		address _feeToken = GHarvestToken(_token).feeToken();
@@ -303,9 +305,11 @@ contract GHarvestTokenHelper
 		uint256 _maxFee = _value - _netValue;
 		Transfers._approveFunds(_feeToken, _exchange, _netValue);
 		uint256 _amount = GExchange(_exchange).convertFundsFromInput(_feeToken, _reserveToken, _netValue, 1);
+		uint256 _fee = GHarvestToken(_token).calcFee(_amount);
+		require(_fee <= _maxFee, "insufficient fee");
 		Transfers._approveFunds(_feeToken, _token, _maxFee);
 		Transfers._approveFunds(_reserveToken, _token, _amount);
-		GHarvestToken(_token).depositTo(_amount, _to);	
+		GHarvestToken(_token).depositTo(_amount, _to);
 		Transfers._approveFunds(_feeToken, _token, 0);
 		_feeChange = Transfers._getBalance(_feeToken);
 		if (_payer != address(this)) Transfers._pushFunds(_feeToken, _payer, _feeChange);
