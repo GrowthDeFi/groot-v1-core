@@ -39,7 +39,8 @@ contract Airdrop is Ownable
 		uint256 _count = _receivers.length;
 		require(_count > 0, "empty set");
 		require(_amount > 0, "zero amount");
-		uint256 _batchAmount = _count * _amount; // validate
+		uint256 _batchAmount = _amount * _count;
+		require(_batchAmount / _amount == _count, "amount overflow");
 		ListInfo storage _list = listInfo[_listId];
 		PaymentInfo[] storage _payments = paymentsInfo[_listId];
 		require(_list.totalAmount <= uint256(-1) - _batchAmount, "excess amount");
