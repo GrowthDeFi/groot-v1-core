@@ -23,6 +23,11 @@ contract Airdrop is Ownable
 	ListInfo[] public listInfo;
 	mapping (uint256 => PaymentInfo[]) public paymentsInfo;
 
+	function listCount() external view returns (uint256 _count)
+	{
+		return listInfo.length;
+	}
+
 	function createList(address _token, string memory _description) external onlyOwner
 	{
 		listInfo.push(ListInfo({ token: _token, description: _description, totalAmount: 0, pendingAmount: 0, cursor: 0 }));
