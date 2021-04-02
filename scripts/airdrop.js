@@ -100,19 +100,43 @@ function replayTransfers(transfers) {
   const accounts = Object.keys(balances)
     .filter((address) => balances[address] > 0n)
     .map((address) => ({ address, value: balances[address] }));
+  accounts.sort((account1, account2) => {
+    if (account1.value < account2.value) return -1;
+    if (account1.value > account2.value) return 1;
+    return 0;
+  });
   return { totalSupply, accounts };
 }
 
-const DEFAULT_TOKEN = '0xD93f98b483CC2F9EFE512696DF8F5deCB73F9497'; // stkGRO
-const DEFAULT_BLOCK = 'latest';
-
-async function main(args)
-{
-  const token = args[2] || DEFAULT_TOKEN;
-  const block = args[3] || DEFAULT_BLOCK;
-  const transfers = await getTransfers(token, { toBlock: block });
-  const { totalSupply, accounts } = replayTransfers(transfers);
-  console.log(totalSupply, Object.keys(accounts).length);
+function prepareAirdrop(amount, totalSupply, accounts) {
+  const receivers = accounts.map((account) => ({
+    receiver: account.address,
+    amount: amount * account.value / totalSupply,
+  }));
+  let leftAmount = amount;
+  for (const receiver of receivers) {
+    leftAmount -= receiver.amount;
+  }
+  for (let index = 0; leftAmount > 0; index = (index + 1) % receivers.length) {
+    receivers[index].amount++;
+    leftAmount--;
+  }
+  return receivers;
 }
 
-entrypoint(main)
+const DEFAULT_AMOUNT = `${100e18}`; // 100 gROOT
+const DEFAULT_BLOCK = 'latest';
+const DEFAULT_TOKEN = '0xD93f98b483CC2F9EFE512696DF8F5deCB73F9497'; // stkGRO
+
+async function main(args) {
+  const amount = BigInt(args[2] || DEFAULT_AMOUNT);
+  const block = args[3] || DEFAULT_BLOCK;
+  const token = args[4] || DEFAULT_TOKEN;
+  const transfers = await getTransfers(token, { toBlock: block });
+  const { totalSupply, accounts } = replayTransfers(transfers);
+  console.log({ totalSupply, holders: Object.keys(accounts).length });
+  const receivers = prepareAirdrop(amount, totalSupply, accounts);
+  fs.writeFileSync('airdrop.json', JSON.stringify(receivers.map(({ receiver, amount }) => ({ receiver, amount: String(amount) })), undefined, 2));
+}
+
+entrypoint(main);
