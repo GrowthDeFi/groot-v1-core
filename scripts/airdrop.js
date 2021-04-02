@@ -108,10 +108,14 @@ function replayTransfers(transfers) {
   return { totalSupply, accounts };
 }
 
-function prepareAirdrop(amount, totalSupply, accounts) {
+function prepareAirdrop(amount, accounts) {
+  let totalValue = 0n;
+  for (const account of accounts) {
+    totalValue += account.value;
+  }
   const receivers = accounts.map((account) => ({
     receiver: account.address,
-    amount: amount * account.value / totalSupply,
+    amount: amount * account.value / totalValue,
   }));
   let leftAmount = amount;
   for (const receiver of receivers) {
@@ -127,16 +131,20 @@ function prepareAirdrop(amount, totalSupply, accounts) {
 const DEFAULT_AMOUNT = `${100e18}`; // 100 gROOT
 const DEFAULT_BLOCK = 'latest';
 const DEFAULT_TOKEN = '0xD93f98b483CC2F9EFE512696DF8F5deCB73F9497'; // stkGRO
+const DEFAULT_MIN_TOKEN_AMOUNT = `${1e17}`; // 0.1 stkGRO
 
 async function main(args) {
   const amount = BigInt(args[2] || DEFAULT_AMOUNT);
   const block = args[3] || DEFAULT_BLOCK;
   const token = args[4] || DEFAULT_TOKEN;
+  const minTokenAmount = args[5] || DEFAULT_MIN_TOKEN_AMOUNT;
   const transfers = await getTransfers(token, { toBlock: block });
   const { totalSupply, accounts } = replayTransfers(transfers);
   console.log({ totalSupply, holders: Object.keys(accounts).length });
-  const receivers = prepareAirdrop(amount, totalSupply, accounts);
-  fs.writeFileSync('airdrop.json', JSON.stringify(receivers.map(({ receiver, amount }) => ({ receiver, amount: String(amount) })), undefined, 2));
+  const eligibleAccounts = accounts.filter((account) => account.value >= DEFAULT_MIN_TOKEN_AMOUNT);
+  const receivers = prepareAirdrop(amount, eligibleAccounts);
+  const json = receivers.map(({ receiver, amount }) => ({ receiver, amount: String(amount) }));
+  fs.writeFileSync('airdrop.json', JSON.stringify(json, undefined, 2));
 }
 
 entrypoint(main);
