@@ -7,12 +7,13 @@ This repository contains the source code for the gROOT smart contracts
 
 ## Deployed Contracts
 
-| Token    | BSC Address                                                                                                         |
-| -------- | ------------------------------------------------------------------------------------------------------------------- |
-| gROOT    | [0x8B571fE684133aCA1E926bEB86cb545E549C832D](https://bscscan.io/address/0x8B571fE684133aCA1E926bEB86cb545E549C832D) |
-| SAFE     | [0x16A87D46ec0FC1adCf0d8C22f83632a0B5abDa2c](https://bscscan.io/address/0x16A87D46ec0FC1adCf0d8C22f83632a0B5abDa2c) |
-| hrvGRO   | [0x65d2Ca0A5a34234c36e7b7E752fA67AC2CCBB203](https://bscscan.io/address/0x65d2Ca0A5a34234c36e7b7E752fA67AC2CCBB203) |
-| hrvgROOT | [0xDA2AE62e2B71ad3000BB75acdA2F8f68DC88aCE4](https://bscscan.io/address/0xDA2AE62e2B71ad3000BB75acdA2F8f68DC88aCE4) |
+| Token        | BSC Address                                                                                                         |
+| ------------ | ------------------------------------------------------------------------------------------------------------------- |
+| gROOT        | [0x8B571fE684133aCA1E926bEB86cb545E549C832D](https://bscscan.io/address/0x8B571fE684133aCA1E926bEB86cb545E549C832D) |
+| SAFE         | [0x16A87D46ec0FC1adCf0d8C22f83632a0B5abDa2c](https://bscscan.io/address/0x16A87D46ec0FC1adCf0d8C22f83632a0B5abDa2c) |
+| stkgROOT/BNB | [0x168306da65229417175EB942D15345585429352f](https://bscscan.io/address/0x168306da65229417175EB942D15345585429352f) |
+| hrvgROOT     | [0x65d2Ca0A5a34234c36e7b7E752fA67AC2CCBB203](https://bscscan.io/address/0x65d2Ca0A5a34234c36e7b7E752fA67AC2CCBB203) |
+| hrvGRO       | [0xDA2AE62e2B71ad3000BB75acdA2F8f68DC88aCE4](https://bscscan.io/address/0xDA2AE62e2B71ad3000BB75acdA2F8f68DC88aCE4) |
 
 ## Repository Organization
 
