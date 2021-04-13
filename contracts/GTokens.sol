@@ -48,3 +48,11 @@ contract hrvgROOT is GHarvestToken
 	{
 	}
 }
+
+contract hrvGRO is GHarvestToken
+{
+	constructor (address _GRO)
+		GHarvestToken("harvest GRO/BNB", "hrvGRO", 18, _GRO, $.WBNB, $.WBNB) public
+	{
+	}
+}
