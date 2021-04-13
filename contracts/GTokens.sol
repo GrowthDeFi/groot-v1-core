@@ -5,6 +5,7 @@ import { GRewardToken } from "./GRewardToken.sol";
 import { GRewardStakeToken } from "./GRewardStakeToken.sol";
 import { GDeflationaryToken } from "./GDeflationaryToken.sol";
 import { GRewardCompoundingStrategyToken } from "./GRewardCompoundingStrategyToken.sol";
+import { GHarvestToken } from "./GHarvestToken.sol";
 
 import { $ } from "./network/$.sol";
 
@@ -36,6 +37,22 @@ contract stkgROOT_BNB is GRewardCompoundingStrategyToken
 {
 	constructor (address _masterChef, uint256 _pid, address _gROOT)
 		GRewardCompoundingStrategyToken("stake gROOT/BNB", "stkgROOT/BNB", 18, _masterChef, _pid, _gROOT) public
+	{
+	}
+}
+
+contract hrvgROOT is GHarvestToken
+{
+	constructor (address _gROOT)
+		GHarvestToken("harvest gROOT/BNB", "hrvgROOT", 18, _gROOT, $.WBNB, $.WBNB) public
+	{
+	}
+}
+
+contract hrvGRO is GHarvestToken
+{
+	constructor (address _GRO)
+		GHarvestToken("harvest GRO/BNB", "hrvGRO", 18, _GRO, $.WBNB, $.WBNB) public
 	{
 	}
 }
